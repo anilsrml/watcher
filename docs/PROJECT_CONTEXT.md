@@ -38,6 +38,10 @@ Alarm geldiğinde metrik, log, trace, edge ve iş verisini salt okunur toplayan;
 | Orchestration | Docker Compose. Kubernetes yok |
 | Uygulama | Minimal 5 servisli e-ticaret app |
 | App ve agent stack | Python/FastAPI + Postgres + Redis + basit HTML. Tooling: `uv`, `pytest`, `ruff` |
+| 5 servisin yapısı | Tek Python kod tabanı, tek image, 5 container. Rol `SERVICE` ortam değişkeniyle seçilir. Her servis ayrı deploy edilebilir |
+| Edge ve host telemetrisi | Ayrı `otel-collector` container'ı Nginx JSON logunu ve host/container metriklerini toplar, `otel-lgtm`'e gönderir. `otel-lgtm` image'ı değiştirilmez |
+| Ön yüz | FastAPI'nin sunduğu basit HTML sayfalar. JavaScript uygulaması yok |
+| İstemci IP'si | k6 normal kullanıcı ve kampanya trafiğinde sahte IP havuzundan `X-Forwarded-For` gönderir. Nginx bu başlığa yalnız Tailscale ağından (`100.64.0.0/10`) gelen isteklerde güvenir. Saldırı senaryosu tek IP kullanır |
 | Telemetri | VPS'te `grafana/otel-lgtm` |
 | Grafana Cloud | Sadece yedek plan. V1'de kullanılmaz |
 | Yük üretici | Lokalde k6 |
@@ -99,9 +103,13 @@ Geçiş basit olmalı: OTel Collector exporter'ını Grafana Cloud'a çevir, age
         │
   Postgres + Redis
         │ OTLP
+  otel-collector (Nginx logu + host/container metrikleri)
+        │ OTLP
   grafana/otel-lgtm
   Collector + Prometheus + Loki + Tempo + Grafana
 ```
+
+Dışarı açık portlar yalnız Nginx (`:80`) ve Grafana (`:3000`). İkisi de VPS'in Tailscale IP'sine bağlanır. Diğer her şey Docker'ın iç ağındadır.
 
 Agent ve yük lokalde çalışır. Böylece VPS zayıflarken agent da düşmez.
 

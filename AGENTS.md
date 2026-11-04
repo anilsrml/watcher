@@ -23,7 +23,13 @@ uv sync                # bağımlılıkları kur
 uv run pytest          # testler
 uv run ruff check .    # lint
 uv run ruff format .   # format
+
+# Lab (VPS'te, dizüstünden). .env'de LAB_BIND_IP ve WATCHER_PUBLIC_IP gerekli
+docker --context watcher-vds compose -f lab/compose.yaml --env-file .env up -d
+uv run --env-file .env pytest tests/e2e   # lab'a yalnız Tailscale'den erişildiğini doğrular
 ```
+
+Lab portları yalnız `LAB_BIND_IP`'ye bağlanır, `0.0.0.0` kullanılmaz: Docker portları ufw'yi atlar. Sunucu IP'leri repo'ya yazılmaz, yalnız `.env`'de durur.
 
 ## Yapı
 

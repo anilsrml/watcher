@@ -1,0 +1,23 @@
+# Watcher lab. Çalıştırma: docker --context watcher-vds compose -f lab/compose.yaml --env-file .env up -d
+# Portlar yalnız LAB_BIND_IP'ye (VPS'in Tailscale IP'si) bağlanır; Docker portları ufw'yi atladığı için 0.0.0.0 kullanılmaz.
+name: watcher-lab
+
+services:
+  lgtm:
+    image: grafana/otel-lgtm:0.37.0
+    ports:
+      - "${LAB_BIND_IP:?LAB_BIND_IP gerekli}:3000:3000"
+    volumes:
+      - lgtm-data:/data
+    mem_limit: 3g
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:1.30.5-alpine
+    ports:
+      - "${LAB_BIND_IP:?LAB_BIND_IP gerekli}:80:80"
+    mem_limit: 128m
+    restart: unless-stopped
+
+volumes:
+  lgtm-data:
