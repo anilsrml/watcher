@@ -1,6 +1,24 @@
-# Watcher lab. Çalıştırma: docker --context watcher-vds compose -f lab/compose.yaml --env-file .env up -d
+# Watcher lab. Çalıştırma: docker --context watcher-vds compose -f lab/compose.yaml --env-file .env up -d --build
 # Portlar yalnız LAB_BIND_IP'ye (VPS'in Tailscale IP'si) bağlanır; Docker portları ufw'yi atladığı için 0.0.0.0 kullanılmaz.
 name: watcher-lab
+
+x-shop: &shop
+  build:
+    context: ..
+    dockerfile: lab/app/Dockerfile
+  image: watcher-shop:dev
+  mem_limit: 256m
+  restart: unless-stopped
+
+x-shop-env: &shop-env
+  # shortcut: doğrudan lgtm'e gönderir; otel-collector eklenince adres ona çevrilecek
+  OTEL_EXPORTER_OTLP_ENDPOINT: http://lgtm:4318
+  OTEL_EXPORTER_OTLP_PROTOCOL: http/protobuf
+  OTEL_METRIC_EXPORT_INTERVAL: "10000"
+  OTEL_LOGS_EXPORTER: otlp
+  OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED: "true"
+  DATABASE_URL: postgresql://watcher:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD gerekli}@postgres:5432/watcher
+  REDIS_URL: redis://redis:6379/0
 
 services:
   lgtm:
@@ -20,22 +38,69 @@ services:
     mem_limit: 128m
     restart: unless-stopped
 
-  frontend:
-    build:
-      context: ..
-      dockerfile: lab/app/Dockerfile
-    image: watcher-shop:dev
+  postgres:
+    image: postgres:17.11-alpine
     environment:
+      POSTGRES_USER: watcher
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD gerekli}
+      POSTGRES_DB: watcher
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "watcher"]
+      interval: 5s
+      retries: 10
+    mem_limit: 512m
+    restart: unless-stopped
+
+  redis:
+    image: redis:8.2.10-alpine
+    mem_limit: 128m
+    restart: unless-stopped
+
+  frontend:
+    <<: *shop
+    environment:
+      <<: *shop-env
       SERVICE: frontend
       OTEL_SERVICE_NAME: frontend
-      # shortcut: doğrudan lgtm'e gönderir; otel-collector eklenince adres ona çevrilecek
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://lgtm:4318
-      OTEL_EXPORTER_OTLP_PROTOCOL: http/protobuf
-      OTEL_METRIC_EXPORT_INTERVAL: "10000"
-      OTEL_LOGS_EXPORTER: otlp
-      OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED: "true"
-    mem_limit: 256m
-    restart: unless-stopped
+
+  product:
+    <<: *shop
+    environment:
+      <<: *shop-env
+      SERVICE: product
+      OTEL_SERVICE_NAME: product
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  cart:
+    <<: *shop
+    environment:
+      <<: *shop-env
+      SERVICE: cart
+      OTEL_SERVICE_NAME: cart
+    depends_on:
+      - redis
+
+  checkout:
+    <<: *shop
+    environment:
+      <<: *shop-env
+      SERVICE: checkout
+      OTEL_SERVICE_NAME: checkout
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  payment:
+    <<: *shop
+    environment:
+      <<: *shop-env
+      SERVICE: payment
+      OTEL_SERVICE_NAME: payment
 
 volumes:
   lgtm-data:
+  pg-data:

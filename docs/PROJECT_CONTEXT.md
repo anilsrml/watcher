@@ -232,9 +232,9 @@ Baseline'lar: rules-only, single-shot LLM, full agent. Her senaryo 3 kez çalı�
 ### Sıradaki adım
 
 1. **VPS'i kur.** ✅ 2026-11-05: SSH anahtarı, Tailscale, ufw, Docker ve dizüstünde `watcher-vds` Docker context'i hazır.
-2. **Lab'ı VPS'te kur.** Docker Compose ile Nginx, 5 servis, Postgres, Redis ve `otel-lgtm` VPS'te ayağa kalksın.
+2. **Lab'ı VPS'te kur.** ✅ 2026-11-05. Docker Compose ile Nginx, 5 servis, Postgres, Redis ve `otel-lgtm` VPS'te ayağa kalksın.
    - Bitti sayılır: Grafana ve uygulama Tailscale üzerinden açılır, internetten açılmaz.
-3. **Uygulamayı enstrümante et.** Normal kullanıcı yolculuğu metrik, log ve trace olarak görünsün.
+3. **Uygulamayı enstrümante et.** ✅ 2026-11-05: ödeme isteği tek trace'te 5 servisi, Postgres ve Redis çağrılarını gösterir (`tests/e2e/test_shop_flow.py`). Normal kullanıcı yolculuğu metrik, log ve trace olarak görünsün.
    - Bitti sayılır: Ana sayfa → ürün → sepet → checkout → payment akışı Grafana'da izlenir.
 4. **Edge ve iş verisini ekle.** Nginx JSON log, sipariş/dk, dönüşüm, kampanya takvimi ve deploy marker hazır olsun.
    - Bitti sayılır: Saldırı ve kampanya kanıtı sorgulanabilir.

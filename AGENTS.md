@@ -20,7 +20,8 @@ Proje hafızası (yalnız bu makinede): `~/Desktop/Beynim/knowledge/watcher/inde
 
 ```bash
 uv sync                # bağımlılıkları kur
-uv run pytest          # testler
+docker --context default compose -f lab/compose.test.yaml up -d   # testler için yerel Postgres + Redis
+uv run pytest          # testler (e2e'ler .env yoksa atlanır)
 uv run ruff check .    # lint
 uv run ruff format .   # format
 

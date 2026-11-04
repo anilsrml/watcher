@@ -1,0 +1,20 @@
+# Yerel test altyapısı (dizüstü): docker --context default compose -f lab/compose.test.yaml up -d
+# Veri bellekte tutulur; yalnız 127.0.0.1'e bağlanır.
+name: watcher-test
+
+services:
+  postgres:
+    image: postgres:17.11-alpine
+    environment:
+      POSTGRES_USER: watcher
+      POSTGRES_PASSWORD: test
+      POSTGRES_DB: watcher
+    ports:
+      - "127.0.0.1:55432:5432"
+    tmpfs:
+      - /var/lib/postgresql/data
+
+  redis:
+    image: redis:8.2.10-alpine
+    ports:
+      - "127.0.0.1:56379:6379"
