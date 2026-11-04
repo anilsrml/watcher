@@ -4,6 +4,8 @@ E-ticaret alarmlarını salt okunur inceleyen agent. Olayın saldırı, meşru k
 
 Tüm kararlar ve kapsam: [docs/PROJECT_CONTEXT.md](docs/PROJECT_CONTEXT.md). İşe başlamadan önce oku. Bir kararı değiştirmeden önce kullanıcıya sor.
 
+Proje hafızası (yalnız bu makinede): `~/Desktop/Beynim/knowledge/watcher/index.md`. Son durum, kullanıcı kararları ve sıradaki adım burada. Dosya yoksa bu adımı atla. Vault'a yazmadan önce vault'un kendi `AGENTS.md` dosyasındaki yazma kurallarını izle.
+
 ## Değişmez ilkeler
 
 1. **Salt okunur.** Agent hedef sistemde yazma işlemi yapmaz. Restart, rollback, config değişikliği ve trafik engelleme yok.
