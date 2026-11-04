@@ -1,45 +1,19 @@
 """Ana sayfa → ürün → sepet → ödeme akışı çalışır ve tek trace'te 5 servisi gösterir. Çalışan VPS lab'ı gerekir."""
 
 import http.cookiejar
-import json
-import os
 import re
 import time
-import urllib.error
 import urllib.parse
 import urllib.request
 
 import pytest
-
-LAB_IP = os.environ.get("LAB_BIND_IP")
+from grafana import LAB_IP, eventually, get_json
 
 pytestmark = pytest.mark.skipif(
     not LAB_IP, reason="LAB_BIND_IP gerekli: uv run --env-file .env pytest tests/e2e"
 )
 
-GRAFANA = f"http://{LAB_IP}:3000/api/datasources/proxy/uid"
 SHOP_SERVICES = {"frontend", "product", "cart", "checkout", "payment"}
-WAIT_SECONDS = 60
-
-
-def get_json(path, **params):
-    url = f"{GRAFANA}/{path}?{urllib.parse.urlencode(params)}"
-    with urllib.request.urlopen(url, timeout=10) as response:
-        return json.load(response)
-
-
-def eventually(check):
-    deadline = time.monotonic() + WAIT_SECONDS
-    while True:
-        try:
-            result, error = check(), None
-        except urllib.error.HTTPError as exc:
-            result, error = None, exc
-        if result or time.monotonic() >= deadline:
-            if error:
-                raise error
-            return result
-        time.sleep(3)
 
 
 @pytest.fixture(scope="module")

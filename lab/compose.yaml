@@ -11,8 +11,7 @@ x-shop: &shop
   restart: unless-stopped
 
 x-shop-env: &shop-env
-  # shortcut: doğrudan lgtm'e gönderir; otel-collector eklenince adres ona çevrilecek
-  OTEL_EXPORTER_OTLP_ENDPOINT: http://lgtm:4318
+  OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
   OTEL_EXPORTER_OTLP_PROTOCOL: http/protobuf
   OTEL_METRIC_EXPORT_INTERVAL: "10000"
   OTEL_LOGS_EXPORTER: otlp
@@ -35,7 +34,21 @@ services:
     image: watcher-nginx:dev
     ports:
       - "${LAB_BIND_IP:?LAB_BIND_IP gerekli}:80:80"
+    volumes:
+      - nginx-logs:/var/log/nginx
     mem_limit: 128m
+    restart: unless-stopped
+
+  otel-collector:
+    build: ./otel-collector
+    image: watcher-otel-collector:dev
+    # root: docker.sock (container metrikleri) ve /hostfs (host metrikleri) okunabilsin. Bu bağlamalar VPS'in kendi yollarıdır.
+    user: "0:0"
+    volumes:
+      - nginx-logs:/var/log/nginx:ro
+      - /:/hostfs:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    mem_limit: 256m
     restart: unless-stopped
 
   postgres:
@@ -104,3 +117,4 @@ services:
 volumes:
   lgtm-data:
   pg-data:
+  nginx-logs:

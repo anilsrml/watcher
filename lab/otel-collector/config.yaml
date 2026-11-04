@@ -1,0 +1,66 @@
+# Servislerin OTLP'si, Nginx JSON logu ve host/container metrikleri buradan otel-lgtm'e gider.
+receivers:
+  otlp:
+    protocols:
+      http:
+        endpoint: 0.0.0.0:4318
+
+  file_log/nginx:
+    include: [/var/log/nginx/access.json]
+    start_at: end
+    operators:
+      - type: json_parser
+        timestamp:
+          parse_from: attributes.msec
+          layout_type: epoch
+          layout: s.ms
+      - type: add
+        field: resource["service.name"]
+        value: nginx
+
+  host_metrics:
+    root_path: /hostfs
+    collection_interval: 10s
+    scrapers:
+      cpu: {}
+      load: {}
+      memory: {}
+      disk: {}
+      filesystem: {}
+      network: {}
+
+  docker_stats:
+    endpoint: unix:///var/run/docker.sock
+    api_version: "1.44"
+    collection_interval: 10s
+
+processors:
+  batch: {}
+  resource/infra:
+    attributes:
+      - key: service.name
+        value: watcher-vds
+        action: insert
+
+exporters:
+  otlp_http:
+    endpoint: http://lgtm:4318
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlp_http]
+    metrics:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlp_http]
+    metrics/infra:
+      receivers: [host_metrics, docker_stats]
+      processors: [resource/infra, batch]
+      exporters: [otlp_http]
+    logs:
+      receivers: [otlp, file_log/nginx]
+      processors: [batch]
+      exporters: [otlp_http]
