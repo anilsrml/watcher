@@ -157,6 +157,7 @@ Her senaryodan önce 10 dakikalık normal trafik baseline alınır.
 
 - Etiketler senaryo çalışmadan önce yazılır.
 - Her senaryo 20-30 dakika sürer.
+- Senaryo, dizüstü ve VPS saatleri NTP ile senkron değilse başlamaz. VPS açılıştan sonra saati ~3 dakika kaymış başlatabilir; NTP bir dakika içinde düzeltir.
 - Baseline'da sunucunun CPU modeli (`lscpu`) ve gürültü ölçümü kaydedilir. VMware steal time'ı göstermeyebilir; gürültü, sabit bir işin birkaç koşudaki süre sapmasıyla ölçülür. CPU modeli değişirse baseline yeniden alınır.
 - Her senaryo 3 kez çalıştırılır.
 - Pencereler sabittir ve tekrar oynatılabilir.
@@ -207,6 +208,7 @@ Baseline'lar: rules-only, single-shot LLM, full agent. Her senaryo 3 kez çalı�
 - Grafana, Prometheus, Loki, Tempo ve Nginx internete açık olmaz. Gerçek internet trafiği baseline'ı ve ground truth'u kirletmesin.
 - Erişim Tailscale ile yapılır. ufw gelen trafiği reddeder; açık olanlar Tailscale ağı, Tailscale UDP portu ve yalnız anahtarla acil durum SSH'ıdır. SSH'ta şifreyle giriş kapalı.
 - Docker portları ufw'yi atlar. Container portları yalnız Tailscale IP'sine veya `127.0.0.1`'e bağlanır, `0.0.0.0` kullanılmaz.
+- VPS'te `/etc/sysctl.d/99-watcher.conf` içinde `net.ipv4.ip_nonlocal_bind = 1` vardır. Açılışta Docker, Tailscale IP'si gelmeden de portları bağlayabilir.
 - Sağlayıcının ücretsiz L3/L4 DDoS koruması açıktır. İlk baseline'da k6'nın gönderdiği istek sayısı Nginx loguyla karşılaştırılır; fark varsa koruma araya giriyordur.
 - Sunucu IP'si repo'ya yazılmaz.
 - PII LLM'e gitmeden maskelenir.

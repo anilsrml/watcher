@@ -25,9 +25,11 @@ uv run ruff check .    # lint
 uv run ruff format .   # format
 
 # Lab (VPS'te, dizüstünden). .env'de LAB_BIND_IP ve WATCHER_PUBLIC_IP gerekli
-docker --context watcher-vds compose -f lab/compose.yaml --env-file .env up -d
+docker --context watcher-vds compose -f lab/compose.yaml --env-file .env up -d --build   # image'lar VPS'te derlenir
 uv run --env-file .env pytest tests/e2e   # lab'a yalnız Tailscale'den erişildiğini doğrular
 ```
+
+Uygulama kodu `lab/app/shop/` altındadır; 5 servis aynı koddan çıkar, rol `SERVICE` ile seçilir. Docker context uzakta çalıştığı için lab'da bind mount kullanılmaz; ayar dosyaları image'a gömülür.
 
 Lab portları yalnız `LAB_BIND_IP`'ye bağlanır, `0.0.0.0` kullanılmaz: Docker portları ufw'yi atlar. Sunucu IP'leri repo'ya yazılmaz, yalnız `.env`'de durur.
 

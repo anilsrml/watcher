@@ -13,10 +13,28 @@ services:
     restart: unless-stopped
 
   nginx:
-    image: nginx:1.30.5-alpine
+    build: ./nginx
+    image: watcher-nginx:dev
     ports:
       - "${LAB_BIND_IP:?LAB_BIND_IP gerekli}:80:80"
     mem_limit: 128m
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ..
+      dockerfile: lab/app/Dockerfile
+    image: watcher-shop:dev
+    environment:
+      SERVICE: frontend
+      OTEL_SERVICE_NAME: frontend
+      # shortcut: doğrudan lgtm'e gönderir; otel-collector eklenince adres ona çevrilecek
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://lgtm:4318
+      OTEL_EXPORTER_OTLP_PROTOCOL: http/protobuf
+      OTEL_METRIC_EXPORT_INTERVAL: "10000"
+      OTEL_LOGS_EXPORTER: otlp
+      OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED: "true"
+    mem_limit: 256m
     restart: unless-stopped
 
 volumes:
