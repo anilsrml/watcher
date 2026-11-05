@@ -1,0 +1,425 @@
+{
+  "incident_id": "inc-537b4c41",
+  "window": {
+    "start": "2026-11-05T10:33:05.285811+00:00",
+    "end": "2026-11-05T10:45:05.285811+00:00"
+  },
+  "impact": [
+    {
+      "text": "Trafik 3.9x artarak 1438/dk oldu; 429 oranı %9.7 ve p95 gecikme 81.4 ms'den 150.2 ms'ye çıktı, bazı kullanıcılar rate limit nedeniyle etkilenmiş olabilir.",
+      "evidence_ids": [
+        "E01",
+        "E02",
+        "E10"
+      ]
+    },
+    {
+      "text": "Sipariş/dk 5.0'dan 9.8'e ve onaylı ödeme 21.8'e çıktı; ancak dönüşüm 0.0567'den 0.0264'e düşerek kampanyanın beklenen 0.05 dönüşümünün altında kaldı.",
+      "evidence_ids": [
+        "E08",
+        "E07",
+        "E13"
+      ]
+    }
+  ],
+  "timeline": [
+    {
+      "text": "Alarmdan 120 sn önce, yaklaşık 10:43:05 civarında Flaş Fırsat Saati başladı; alarm anında aktif ve 5x trafik bekleniyordu.",
+      "evidence_ids": [
+        "E13"
+      ]
+    },
+    {
+      "text": "Son 2 dakikada istek hızı 1438/dk'ya çıktı; baseline 364.9/dk idi (3.9x).",
+      "evidence_ids": [
+        "E01"
+      ]
+    },
+    {
+      "text": "Aynı pencerede 278 adet 429 oluştu; client-1 149, client-2 129 istek aldı.",
+      "evidence_ids": [
+        "E06",
+        "E02"
+      ]
+    },
+    {
+      "text": "Sipariş/dk 9.8 ve onaylı ödeme 21.8 olarak gerçekleşti; uygulama hatası, hatalı trace ve deploy marker'ı yoktu.",
+      "evidence_ids": [
+        "E08",
+        "E09",
+        "E11",
+        "E12"
+      ]
+    }
+  ],
+  "hypotheses": [
+    {
+      "label": "attack",
+      "verdict": "rejected",
+      "text": "V1'deki saldırı tanımı tek IP'den L7 flood iken burada iki istemci öne çıkıyor; ayrıca aktif kampanya, 2xx hakimiyeti ve artan siparişler saldırı ihtimalini zayıflatıyor.",
+      "evidence_ids": [
+        "E03",
+        "E04",
+        "E05",
+        "E13",
+        "E02",
+        "E08"
+      ]
+    },
+    {
+      "label": "legit_campaign",
+      "verdict": "supported",
+      "text": "Flaş Fırsat Saati alarmdan 120 sn önce başladı ve 5x trafik bekleniyordu; gözlenen 3.9x artış, 429'lar ve dönüşüm düşüşü kampanya/rate limit ile uyumlu, sipariş ve ödeme artışı meşru talebi destekliyor.",
+      "evidence_ids": [
+        "E13",
+        "E01",
+        "E02",
+        "E06",
+        "E07",
+        "E08"
+      ]
+    },
+    {
+      "label": "ops_failure",
+      "verdict": "rejected",
+      "text": "Deploy marker'ı yok, yakalanmamış uygulama hatası yok, hatalı trace yok ve checkout_failed 0; gecikme artışı trafik hacmiyle sınırlı görünüyor.",
+      "evidence_ids": [
+        "E12",
+        "E09",
+        "E11",
+        "E07",
+        "E10"
+      ]
+    },
+    {
+      "label": "unknown",
+      "verdict": "rejected",
+      "text": "Kampanya takvimi, trafik artışı ve sipariş artışı birlikte sınıflandırma için yeterli görünüyor; yine de iki istemci yoğunlaşması güveni medium'a düşürüyor.",
+      "evidence_ids": [
+        "E13",
+        "E01",
+        "E08",
+        "E03"
+      ]
+    }
+  ],
+  "could_mislead": [
+    {
+      "text": "client-1 ve client-2'nin trafiğin yaklaşık %75'ini alması, çerezsiz istek payının ~%33 olması ve 429'lar bot/saldırı izlenimi verebilir.",
+      "evidence_ids": [
+        "E03",
+        "E04",
+        "E05",
+        "E06"
+      ]
+    },
+    {
+      "text": "Dönüşümün baseline ve kampanya beklentisinin altında kalması operasyonel sorun veya saldırı şüphesini artırabilir; ancak 5xx/uygulama hatası yok.",
+      "evidence_ids": [
+        "E07",
+        "E13",
+        "E09",
+        "E11"
+      ]
+    },
+    {
+      "text": "Kampanya kaydı yalnızca takvim bilgisi olabilir; gerçek kampanya trafiğiyle bu iki istemcinin ilişkisi doğrulanmadı.",
+      "evidence_ids": [
+        "E13"
+      ]
+    }
+  ],
+  "missing_evidence": [
+    "client-1 ve client-2 için ASN, IP itibarı, user-agent, referrer ve oturum kalitesi",
+    "Kampanya linkinin veya trafik kaynağının gerçekten bu iki istemciyle ilişkisi",
+    "Rate limit kuralının per-IP mi per-oturum mu olduğu ve 429 alan kullanıcıların deneyimi",
+    "Önceki kampanyalarda benzer istemci yoğunlaşması olup olmadığı",
+    "Checkout funnel'da dönüşüm düşüşünün hangi adımda oluştuğu"
+  ],
+  "next_steps": [
+    "Kampanya sahibiyle Flaş Fırsat Saati'nin canlı olduğunu ve beklenen trafik kaynaklarını doğrula.",
+    "client-1 ve client-2'nin ASN/IP itibarı, user-agent ve referrer dağılımını incele; otomatik blok uygulama.",
+    "429 oranı, p95 ve dönüşümü kampanya boyunca izle; rate limit eşiğini kampanya için gözden geçir.",
+    "Dönüşüm düşüşü sürerse checkout funnel ve ödeme adımlarını ayrıca incele."
+  ],
+  "label": "legit_campaign",
+  "confidence": "medium",
+  "decision": {
+    "text": "Flaş Fırsat Saati ile zamanlama, 3.9x trafik artışı ve sipariş/ödeme artışı meşru kampanyayı destekliyor; iki istemci yoğunlaşması güveni medium'a düşürüyor.",
+    "evidence_ids": [
+      "E13",
+      "E01",
+      "E08",
+      "E03"
+    ]
+  },
+  "invalid_claims": [],
+  "citation_validity": 1.0,
+  "abstain_reason": null,
+  "evidence": [
+    {
+      "evidence_id": "E01",
+      "title": "traffic",
+      "source": "loki",
+      "query": "api/datasources/proxy/uid/loki/loki/api/v1/query?query=sum%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%5B120s%5D%29%29&time=1793875505000000000\napi/datasources/proxy/uid/loki/loki/api/v1/query?query=sum%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%5B420s%5D%29%29&time=1793875205000000000",
+      "status": "ok",
+      "summary": "Nginx istek hızı: son 2 dk 1438.0/dk, baseline 364.9/dk (3.9x)",
+      "data": {
+        "recent_per_min": 1438.0,
+        "baseline_per_min": 364.9,
+        "ratio": 3.9
+      },
+      "collected_at": "2026-11-05T18:13:17.152915+00:00"
+    },
+    {
+      "evidence_id": "E02",
+      "title": "status",
+      "source": "loki",
+      "query": "api/datasources/proxy/uid/loki/loki/api/v1/query?query=sum+by+%28status%29+%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%5B120s%5D%29%29&time=1793875505000000000\napi/datasources/proxy/uid/loki/loki/api/v1/query?query=sum+by+%28status%29+%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%5B420s%5D%29%29&time=1793875205000000000",
+      "status": "ok",
+      "summary": "Nginx durum payları son 2 dk: 2xx %85.7, 3xx %4.6, 429 %9.7; baseline: 2xx %92.1, 3xx %7.9",
+      "data": {
+        "recent": {
+          "2xx": 0.857,
+          "3xx": 0.046,
+          "429": 0.097
+        },
+        "baseline": {
+          "2xx": 0.921,
+          "3xx": 0.079
+        }
+      },
+      "collected_at": "2026-11-05T18:13:17.152915+00:00"
+    },
+    {
+      "evidence_id": "E03",
+      "title": "clients",
+      "source": "loki",
+      "query": "api/datasources/proxy/uid/loki/loki/api/v1/query?query=sum+by+%28remote_addr%29+%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%7C+remote_addr%3D~%22.%2A0%24%22+%5B120s%5D%29%29&time=1793875505000000000\napi/datasources/proxy/uid/loki/loki/api/v1/query?query=sum+by+%28remote_addr%29+%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%7C+remote_addr%3D~%22.%2A1%24%22+%5B120s%5D%29%29&time=1793875505000000000\napi/datasources/proxy/uid/loki/loki/api/v1/query?query=sum+by+%28remote_addr%29+%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%7C+remote_addr%3D~%22.%2A2%24%22+%5B120s%5D%29%29&time=1793875505000000000\napi/datasources/proxy/uid/loki/loki/api/v1/query?query=sum+by+%28remote_addr%29+%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%7C+remote_addr%3D~%22.%2A3%24%22+%5B120s%5D%29%29&time=1793875505000000000\napi/datasources/proxy/uid/loki/loki/api/v1/query?query=sum+by+%28remote_addr%29+%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%7C+remote_addr%3D~%22.%2A4%24%22+%5B120s%5D%29%29&time=1793875505000000000\napi/datasources/proxy/uid/loki/loki/api/v1/query?query=sum+by+%28remote_addr%29+%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%7C+remote_addr%3D~%22.%2A5%24%22+%5B120s%5D%29%29&time=1793875505000000000\napi/datasources/proxy/uid/loki/loki/api/v1/query?query=sum+by+%28remote_addr%29+%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%7C+remote_addr%3D~%22.%2A6%24%22+%5B120s%5D%29%29&time=1793875505000000000\napi/datasources/proxy/uid/loki/loki/api/v1/query?query=sum+by+%28remote_addr%29+%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%7C+remote_addr%3D~%22.%2A7%24%22+%5B120s%5D%29%29&time=1793875505000000000\napi/datasources/proxy/uid/loki/loki/api/v1/query?query=sum+by+%28remote_addr%29+%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%7C+remote_addr%3D~%22.%2A8%24%22+%5B120s%5D%29%29&time=1793875505000000000\napi/datasources/proxy/uid/loki/loki/api/v1/query?query=sum+by+%28remote_addr%29+%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%7C+remote_addr%3D~%22.%2A9%24%22+%5B120s%5D%29%29&time=1793875505000000000\napi/datasources/proxy/uid/loki/loki/api/v1/query?query=sum+by+%28remote_addr%29+%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%7C+remote_addr%3D~%22.%2A%5B%5E0-9%5D%24%22+%5B120s%5D%29%29&time=1793875505000000000\napi/datasources/proxy/uid/loki/loki/api/v1/query?query=sum+by+%28remote_addr%29+%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%7C+remote_addr%3D~%22.%2A0%24%22+%5B420s%5D%29%29&time=1793875205000000000\napi/datasources/proxy/uid/loki/loki/api/v1/query?query=sum+by+%28remote_addr%29+%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%7C+remote_addr%3D~%22.%2A1%24%22+%5B420s%5D%29%29&time=1793875205000000000\napi/datasources/proxy/uid/loki/loki/api/v1/query?query=sum+by+%28remote_addr%29+%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%7C+remote_addr%3D~%22.%2A2%24%22+%5B420s%5D%29%29&time=1793875205000000000\napi/datasources/proxy/uid/loki/loki/api/v1/query?query=sum+by+%28remote_addr%29+%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%7C+remote_addr%3D~%22.%2A3%24%22+%5B420s%5D%29%29&time=1793875205000000000\napi/datasources/proxy/uid/loki/loki/api/v1/query?query=sum+by+%28remote_addr%29+%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%7C+remote_addr%3D~%22.%2A4%24%22+%5B420s%5D%29%29&time=1793875205000000000\napi/datasources/proxy/uid/loki/loki/api/v1/query?query=sum+by+%28remote_addr%29+%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%7C+remote_addr%3D~%22.%2A5%24%22+%5B420s%5D%29%29&time=1793875205000000000\napi/datasources/proxy/uid/loki/loki/api/v1/query?query=sum+by+%28remote_addr%29+%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%7C+remote_addr%3D~%22.%2A6%24%22+%5B420s%5D%29%29&time=1793875205000000000\napi/datasources/proxy/uid/loki/loki/api/v1/query?query=sum+by+%28remote_addr%29+%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%7C+remote_addr%3D~%22.%2A7%24%22+%5B420s%5D%29%29&time=1793875205000000000\napi/datasources/proxy/uid/loki/loki/api/v1/query?query=sum+by+%28remote_addr%29+%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%7C+remote_addr%3D~%22.%2A8%24%22+%5B420s%5D%29%29&time=1793875205000000000\napi/datasources/proxy/uid/loki/loki/api/v1/query?query=sum+by+%28remote_addr%29+%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%7C+remote_addr%3D~%22.%2A9%24%22+%5B420s%5D%29%29&time=1793875205000000000\napi/datasources/proxy/uid/loki/loki/api/v1/query?query=sum+by+%28remote_addr%29+%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%7C+remote_addr%3D~%22.%2A%5B%5E0-9%5D%24%22+%5B420s%5D%29%29&time=1793875205000000000",
+      "status": "ok",
+      "summary": "Farklı istemci IP'si son 2 dk 196, baseline (7 dk) 629; son 2 dk en yoğunlar: client-1 %38.0, client-2 %37.3, client-3 %0.3; baseline'da en yoğun IP'nin payı %0.4",
+      "data": {
+        "distinct_recent": 196,
+        "distinct_baseline": 629,
+        "top_recent": [
+          {
+            "client": "client-1",
+            "requests": 1094,
+            "share": 0.38
+          },
+          {
+            "client": "client-2",
+            "requests": 1074,
+            "share": 0.373
+          },
+          {
+            "client": "client-3",
+            "requests": 9,
+            "share": 0.003
+          }
+        ],
+        "top_share_baseline": 0.004
+      },
+      "collected_at": "2026-11-05T18:13:17.152915+00:00"
+    },
+    {
+      "evidence_id": "E04",
+      "title": "client-1",
+      "source": "loki",
+      "query": "api/datasources/proxy/uid/loki/loki/api/v1/query?query=topk%2850%2C+sum+by+%28path%2C+status%29+%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%7C+remote_addr%3D%22176.40.12.19%22+%5B120s%5D%29%29%29&time=1793875505000000000\napi/datasources/proxy/uid/loki/loki/api/v1/query?query=count%28sum+by+%28session%29+%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%7C+remote_addr%3D%22176.40.12.19%22+%7C+session%21%3D%22%22+%5B120s%5D%29%29%29&time=1793875505000000000\napi/datasources/proxy/uid/loki/loki/api/v1/query?query=sum%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%7C+remote_addr%3D%22176.40.12.19%22+%7C+session%3D%22%22+%5B120s%5D%29%29&time=1793875505000000000",
+      "status": "ok",
+      "summary": "client-1 son 2 dk: 1094 istek (home 358, cart 34, cart_add 44, checkout 4, product 654); 429 149; farklı oturum çerezi 266; çerezsiz istek payı %32.7",
+      "data": {
+        "requests": 1094,
+        "pages": {
+          "home": 358,
+          "cart": 34,
+          "cart_add": 44,
+          "checkout": 4,
+          "product": 654
+        },
+        "rate_limited": 149,
+        "sessions": 266,
+        "cookieless_share": 0.327
+      },
+      "collected_at": "2026-11-05T18:13:17.152915+00:00"
+    },
+    {
+      "evidence_id": "E05",
+      "title": "client-2",
+      "source": "loki",
+      "query": "api/datasources/proxy/uid/loki/loki/api/v1/query?query=topk%2850%2C+sum+by+%28path%2C+status%29+%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%7C+remote_addr%3D%22176.40.12.7%22+%5B120s%5D%29%29%29&time=1793875505000000000\napi/datasources/proxy/uid/loki/loki/api/v1/query?query=count%28sum+by+%28session%29+%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%7C+remote_addr%3D%22176.40.12.7%22+%7C+session%21%3D%22%22+%5B120s%5D%29%29%29&time=1793875505000000000\napi/datasources/proxy/uid/loki/loki/api/v1/query?query=sum%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%7C+remote_addr%3D%22176.40.12.7%22+%7C+session%3D%22%22+%5B120s%5D%29%29&time=1793875505000000000",
+      "status": "ok",
+      "summary": "client-2 son 2 dk: 1074 istek (home 358, cart 49, cart_add 55, checkout 8, product 604); 429 129; farklı oturum çerezi 247; çerezsiz istek payı %33.3",
+      "data": {
+        "requests": 1074,
+        "pages": {
+          "home": 358,
+          "cart": 49,
+          "cart_add": 55,
+          "checkout": 8,
+          "product": 604
+        },
+        "rate_limited": 129,
+        "sessions": 247,
+        "cookieless_share": 0.333
+      },
+      "collected_at": "2026-11-05T18:13:17.152915+00:00"
+    },
+    {
+      "evidence_id": "E06",
+      "title": "rate_limited",
+      "source": "loki",
+      "query": "api/datasources/proxy/uid/loki/loki/api/v1/query?query=topk%283%2C+sum+by+%28remote_addr%29+%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%7C+status%3D%22429%22+%5B120s%5D%29%29%29&time=1793875505000000000\napi/datasources/proxy/uid/loki/loki/api/v1/query?query=sum%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%7C+status%3D%22429%22+%5B120s%5D%29%29&time=1793875505000000000",
+      "status": "ok",
+      "summary": "Son 2 dk 429 toplamı 278; en çok 429 alanlar: client-1 149 (%53.6), client-2 129 (%46.4)",
+      "data": {
+        "total": 278,
+        "top": [
+          {
+            "client": "client-1",
+            "count": 149,
+            "share": 0.536
+          },
+          {
+            "client": "client-2",
+            "count": 129,
+            "share": 0.464
+          }
+        ]
+      },
+      "collected_at": "2026-11-05T18:13:17.152915+00:00"
+    },
+    {
+      "evidence_id": "E07",
+      "title": "funnel",
+      "source": "loki",
+      "query": "api/datasources/proxy/uid/loki/loki/api/v1/query?query=topk%2850%2C+sum+by+%28path%2C+status%29+%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%7C+status%21%3D%22429%22+%5B120s%5D%29%29%29&time=1793875505000000000\napi/datasources/proxy/uid/loki/loki/api/v1/query?query=topk%2850%2C+sum+by+%28path%2C+status%29+%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%7C+status%21%3D%22429%22+%5B420s%5D%29%29%29&time=1793875205000000000",
+      "status": "ok",
+      "summary": "Sunulan (429 olmayan) istekler, dakika başı. Son 2 dk: home 417.0, product 749.0, cart_add 66.0, checkout_ok 11.0, checkout_failed 0, dönüşüm 0.0264. Baseline: home 89.9, product 211.9, cart_add 29.0, checkout_ok 5.1, checkout_failed 0, dönüşüm 0.0567",
+      "data": {
+        "recent": {
+          "home": 417.0,
+          "cart": 56.0,
+          "cart_add": 66.0,
+          "checkout_ok": 11.0,
+          "product": 749.0,
+          "conversion": 0.0264
+        },
+        "baseline": {
+          "home": 89.9,
+          "cart": 29.0,
+          "cart_add": 29.0,
+          "checkout_ok": 5.1,
+          "product": 211.9,
+          "conversion": 0.0567
+        }
+      },
+      "collected_at": "2026-11-05T18:13:17.152915+00:00"
+    },
+    {
+      "evidence_id": "E08",
+      "title": "orders",
+      "source": "prometheus",
+      "query": "api/datasources/proxy/uid/prometheus/api/v1/query?query=sum%28increase%28shop_orders_total%5B120s%5D%29%29&time=1793875505\napi/datasources/proxy/uid/prometheus/api/v1/query?query=sum%28increase%28shop_orders_total%5B420s%5D%29%29&time=1793875205\napi/datasources/proxy/uid/prometheus/api/v1/query?query=sum+by+%28status%29+%28increase%28shop_payments_total%5B120s%5D%29%29&time=1793875505",
+      "status": "ok",
+      "summary": "Sipariş/dk (shop_orders_total): son 2 dk 9.8, baseline 5.0; son 2 dk ödemeler {'approved': 21.8}",
+      "data": {
+        "recent_per_min": 9.8,
+        "baseline_per_min": 5.0,
+        "payments_recent": {
+          "approved": 21.8
+        }
+      },
+      "collected_at": "2026-11-05T18:13:17.152915+00:00"
+    },
+    {
+      "evidence_id": "E09",
+      "title": "app_errors",
+      "source": "loki",
+      "query": "api/datasources/proxy/uid/loki/loki/api/v1/query?query=sum+by+%28service_name%2C+exception_type%29+%28count_over_time%28%7Bservice_name%3D~%22.%2B%22%2C+service_name%21%3D%22nginx%22%7D+%7C%3D+%22unhandled+error%22+%5B120s%5D%29%29&time=1793875505000000000\napi/datasources/proxy/uid/loki/loki/api/v1/query?query=sum+by+%28service_name%2C+exception_type%29+%28count_over_time%28%7Bservice_name%3D~%22.%2B%22%2C+service_name%21%3D%22nginx%22%7D+%7C%3D+%22unhandled+error%22+%5B420s%5D%29%29&time=1793875205000000000\napi/datasources/proxy/uid/loki/loki/api/v1/query_range?end=1793875505000000000&limit=20&query=%7Bservice_name%3D~%22.%2B%22%2C+service_name%21%3D%22nginx%22%7D+%7C%3D+%22unhandled+error%22&start=1793875385000000000",
+      "status": "ok",
+      "summary": "Yakalanmamış uygulama hataları son 2 dk: yok; baseline: yok",
+      "data": {
+        "recent": [],
+        "baseline": [],
+        "untrusted_log_excerpts": {}
+      },
+      "collected_at": "2026-11-05T18:13:17.152915+00:00"
+    },
+    {
+      "evidence_id": "E10",
+      "title": "latency",
+      "source": "prometheus",
+      "query": "api/datasources/proxy/uid/prometheus/api/v1/query?query=histogram_quantile%280.95%2C+sum+by+%28le%29+%28rate%28http_server_duration_milliseconds_bucket%7Bjob%3D%22frontend%22%7D%5B120s%5D%29%29%29&time=1793875505\napi/datasources/proxy/uid/prometheus/api/v1/query?query=histogram_quantile%280.95%2C+sum+by+%28le%29+%28rate%28http_server_duration_milliseconds_bucket%7Bjob%3D%22frontend%22%7D%5B420s%5D%29%29%29&time=1793875205",
+      "status": "ok",
+      "summary": "frontend p95 gecikme: son 2 dk 150.2 ms, baseline 81.4 ms",
+      "data": {
+        "recent_p95_ms": 150.2,
+        "baseline_p95_ms": 81.4
+      },
+      "collected_at": "2026-11-05T18:13:17.152915+00:00"
+    },
+    {
+      "evidence_id": "E11",
+      "title": "error_traces",
+      "source": "tempo",
+      "query": "api/datasources/proxy/uid/tempo/api/search?end=1793875505&limit=100&q=%7B+status+%3D+error+%7D&start=1793875385",
+      "status": "ok",
+      "summary": "Tempo son 2 dk hatalı trace: 0; kök işlemler: yok",
+      "data": {
+        "count": 0,
+        "limit_reached": false,
+        "by_root": {}
+      },
+      "collected_at": "2026-11-05T18:13:17.152915+00:00"
+    },
+    {
+      "evidence_id": "E12",
+      "title": "deploys",
+      "source": "grafana",
+      "query": "api/annotations?from=1793874785000&tags=deploy&to=1793875505000",
+      "status": "ok",
+      "summary": "Penceredeki deploy marker'ları: yok",
+      "data": {
+        "deploys": []
+      },
+      "collected_at": "2026-11-05T18:13:17.152915+00:00"
+    },
+    {
+      "evidence_id": "E13",
+      "title": "campaigns",
+      "source": "campaigns.json",
+      "query": "/home/anilsrml/Desktop/watcher/.claude/worktrees/practical-lamport-cb2acb/scenarios/campaigns.json",
+      "status": "ok",
+      "summary": "Kampanya takvimi (pencereyle örtüşen): Flaş Fırsat Saati (alarmdan 120 sn önce başladı, alarmda aktif, beklenen trafik 5x, beklenen dönüşüm 0.05)",
+      "data": {
+        "campaigns": [
+          {
+            "name": "Flaş Fırsat Saati",
+            "started_seconds_before_alarm": 120,
+            "active_at_alarm": true,
+            "expected_traffic_multiplier": 5,
+            "expected_conversion": 0.05
+          }
+        ]
+      },
+      "collected_at": "2026-11-05T18:13:17.152915+00:00"
+    }
+  ],
+  "aliases": {
+    "client-1": "176.40.12.19",
+    "client-2": "176.40.12.7",
+    "client-3": "85.105.117.85"
+  },
+  "metadata": {
+    "model": "openrouter/deepseek/deepseek-v4.1-flash-1017",
+    "input_tokens": 2877,
+    "output_tokens": 6416,
+    "cost_usd": null,
+    "llm_seconds": 27.7,
+    "queries": 46,
+    "collect_seconds": 7.1,
+    "total_seconds": 34.8
+  }
+}

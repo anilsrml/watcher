@@ -31,7 +31,14 @@ uv run --env-file .env pytest tests/e2e   # lab'a yalnız Tailscale'den erişild
 uv run --env-file .env python lab/deploy.py checkout v1.4.2   # servisi yeni sürümle başlatır, Grafana'ya deploy marker yazar
 uv run --env-file .env python scenarios/runner.py campaign-flash-sale-01   # 30 dk'lık koşu; sıradaki tekrarı koşar, kaydı scenarios/runs/'a yazar
 uv run --env-file .env python scenarios/runner.py campaign-flash-sale-01 --trial   # 5 dk'lık deneme, tekrar sayılmaz
+
+# Agent. .env'de LAB_BIND_IP, LLM_MODEL (LiteLLM biçimi) ve LLM_API_KEY gerekli
+uv run --env-file .env python agent/investigate.py inc-2ef0e0db --start <pencere başı> --end <alarm>   # rapor agent/reports/'a
+uv run --env-file .env python agent/evaluate.py   # geliştirme seti (r1, r2): koşu başına sonuç, macro-F1 → agent/eval/dev.md
+uv run --env-file .env python tests/fixtures/record.py   # birim testlerinin lab kayıtlarını yeniler (yalnız r1)
 ```
+
+Holdout (`agent/evaluate.py --holdout`, r3) bir kez ölçüldü; sonucu `agent/eval/holdout.md`. Kural ya da istem r3'e bakılarak ayarlanmaz.
 
 Koşu sırasında dizüstü açık ve uyanık kalmalı. Kill switch: Ctrl+C ya da `docker --context default stop watcher-k6`. k6 dizüstünde Docker'da (`grafana/k6:2.3.0`) çalışır; kurulum gerekmez.
 

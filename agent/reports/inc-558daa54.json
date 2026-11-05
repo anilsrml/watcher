@@ -1,0 +1,429 @@
+{
+  "incident_id": "inc-558daa54",
+  "window": {
+    "start": "2026-11-05T14:08:08.272818+00:00",
+    "end": "2026-11-05T14:20:08.272818+00:00"
+  },
+  "impact": [
+    {
+      "text": "İstek hızı baseline'ın 10.3 katına çıktı (355/dk → 3664/dk) ve isteklerin %76.3'ü 429 ile reddedildi; kapasitenin büyük kısmı tek istemcinin selini emmek için harcandı.",
+      "evidence_ids": [
+        "E01",
+        "E02",
+        "E06"
+      ]
+    },
+    {
+      "text": "Sunulan ana sayfa trafiği 89.9/dk'dan 577.5/dk'ya çıktı; dönüşüm oranı %3.67'den %1.04'e düştü, ancak bu düşüş gerçek bir satış kaybından çok selin payda etkisinden kaynaklanıyor.",
+      "evidence_ids": [
+        "E07"
+      ]
+    },
+    {
+      "text": "Sipariş hızı 3.4/dk'dan 6.0/dk'ya, onaylı ödeme 12/dk'ya çıktı; yani iş sonucu tarafında belirgin bir kayıp görünmüyor.",
+      "evidence_ids": [
+        "E08"
+      ]
+    },
+    {
+      "text": "Frontend p95 gecikme 72.1 ms'den 103.7 ms'ye yükseldi; hafif bir gecikme etkisi var, uygulama hatası veya hatalı trace yok.",
+      "evidence_ids": [
+        "E10",
+        "E09",
+        "E11"
+      ]
+    }
+  ],
+  "timeline": [
+    {
+      "text": "Baseline döneminde istek hızı 355/dk ve trafik dağınık; en yoğun tek IP'nin payı yalnızca %0.4.",
+      "evidence_ids": [
+        "E01",
+        "E03"
+      ]
+    },
+    {
+      "text": "Alarmdan önceki son 2 dakikada istek hızı 3664/dk'ya fırladı; farklı istemci sayısı 629'dan 195'e düştü, yani trafik dağınıklıktan tek kaynağa yoğunlaştı.",
+      "evidence_ids": [
+        "E01",
+        "E03"
+      ]
+    },
+    {
+      "text": "client-1 son 2 dakikada 6567 istek attı (trafiğin %89.6'sı), tamamı home sayfasına, %100 çerezsiz ve 0 oturumla; bu istemcinin 5592 isteği 429 aldı.",
+      "evidence_ids": [
+        "E03",
+        "E04"
+      ]
+    },
+    {
+      "text": "Son 2 dakikadaki 5592 adet 429'un %100'ü client-1'e ait; client-2 gibi normal istemciler oturum çerezli ve çerezli/çerezsiz karışık normal akışta (home, product, cart_add, checkout) ilerliyor.",
+      "evidence_ids": [
+        "E06",
+        "E05"
+      ]
+    },
+    {
+      "text": "Pencerede deploy marker'ı ve kampanya kaydı yok; yakalanmamış uygulama hatası ve hatalı trace de yok.",
+      "evidence_ids": [
+        "E12",
+        "E13",
+        "E09",
+        "E11"
+      ]
+    }
+  ],
+  "hypotheses": [
+    {
+      "label": "attack",
+      "verdict": "supported",
+      "text": "Trafiğin %89.6'sı tek istemciden, tamamı ana sayfaya, %100 çerezsiz ve 0 oturumla geliyor; baseline'da en yoğun IP payı %0.4 iken bu, tek kaynaklı bir L7 flood'a işaret ediyor. 429'ların %100'ünün bu istemciden olması da rate limit'in hedefini doğruluyor.",
+      "evidence_ids": [
+        "E03",
+        "E04",
+        "E06",
+        "E02"
+      ]
+    },
+    {
+      "label": "legit_campaign",
+      "verdict": "rejected",
+      "text": "Kampanya takviminde pencereyle örtüşen kayıt yok; ayrıca meşru kampanya trafiği tek IP'de toplanmaz, oturum çerezi taşır ve ana sayfa dışındaki ürün/sepet adımlarına yayılır. client-1'in 0 oturumu ve %100 çerezsizliği kampanya profiliyle çelişiyor.",
+      "evidence_ids": [
+        "E13",
+        "E04",
+        "E05",
+        "E03"
+      ]
+    },
+    {
+      "label": "ops_failure",
+      "verdict": "rejected",
+      "text": "Pencerede deploy marker'ı yok, yakalanmamış uygulama hatası yok ve hatalı trace yok; 429'lar arıza değil, rate limit'in devreye girmesidir. Sipariş ve onaylı ödeme sayıları artmış durumda, bu da bir arıza tablosuyla uyuşmuyor.",
+      "evidence_ids": [
+        "E12",
+        "E09",
+        "E11",
+        "E08"
+      ]
+    },
+    {
+      "label": "unknown",
+      "verdict": "rejected",
+      "text": "İstemci dağılımı, oturum/çerez profili ve 429 dağılımı tek kaynaklı flood tablosunu net biçimde çiziyor; sınıflar arasında kararsızlık gerektirecek bir kanıt boşluğu yok.",
+      "evidence_ids": [
+        "E03",
+        "E04",
+        "E06"
+      ]
+    }
+  ],
+  "could_mislead": [
+    {
+      "text": "Sipariş ve onaylı ödeme sayılarının artması, trafiğin tamamı meşruymuş gibi okunabilir; oysa bu artış selin dışında kalan normal istemcilerden geliyor olabilir.",
+      "evidence_ids": [
+        "E08",
+        "E07"
+      ]
+    },
+    {
+      "text": "429 oranının yüksek olması, arıza veya rate limit yanlış yapılandırması izlenimi verebilir; ancak 429'ların tamamı tek istemcide toplanmış.",
+      "evidence_ids": [
+        "E02",
+        "E06"
+      ]
+    },
+    {
+      "text": "client-1 dışındaki istemcilerin sayısının baseline'a göre düşmesi (629 → 195), gerçek kullanıcı kaybı gibi görünebilir; kısa 2 dakikalık pencere ve selin örneklemi domine etmesi bu karşılaştırmayı yanıltabilir.",
+      "evidence_ids": [
+        "E03"
+      ]
+    },
+    {
+      "text": "Tek IP'lik flood, IP rotasyonlu dağıtık bir denemenin yalnızca ilk ayağı olabilir; engelleme sonrası yeni IP'ler görünmezse karar eksik kalır.",
+      "evidence_ids": [
+        "E03",
+        "E04"
+      ]
+    }
+  ],
+  "missing_evidence": [
+    "client-1'in tam IP'si, ASN/coğrafi bilgisi ve user-agent imzası",
+    "client-1'in home dışında denediği yol/protokol detayı ve istek zamanlaması (sabit aralık mı, burst mü)",
+    "Daha uzun pencerede (alarm sonrası 10-30 dk) yeni istemcilerin belirip belirmediği",
+    "WAF/edge katmanındaki bot ve rate limit kural logları",
+    "Aynı saatlerdeki geçmiş günlerin baseline'ı (mevsimsel/saatlik normalin doğrulanması)",
+    "429 alan isteklerin backend'e hiç ulaşıp ulaşmadığına dair doğrulama"
+  ],
+  "next_steps": [
+    "client-1'i edge/WAF katmanında geçici olarak blokla veya sıkı throttle uygula; uygulama katmanına dokunma.",
+    "Engelleme sonrası 10-15 dakika izle: istek hızı baseline'a dönüyor mu, yeni istemciler öne çıkıyor mu kontrol et.",
+    "client-1'in IP, ASN ve user-agent imzasını kayıt altına al; benzer desenli diğer istemcileri geriye dönük tara.",
+    "Sipariş ve onaylı ödeme metriklerinin sel sonrası da korunduğunu doğrula; dönüşüm oranını sel sonrası normalize edilmiş trafikle yeniden hesapla.",
+    "Rate limit eşiklerinin ana sayfa için bu senaryoda yeterli olduğunu gözden geçir; gerekiyorsa insan onayıyla sıkılaştırma öner."
+  ],
+  "label": "attack",
+  "confidence": "high",
+  "decision": {
+    "text": "Tek bir istemcinin (client-1) tüm istekleri ana sayfaya yönelik, çerezsiz ve oturumsuz L7 flood'u; 429'ların %100'ü bu istemciden, bu nedenle karar 'attack'.",
+    "evidence_ids": [
+      "E01",
+      "E02",
+      "E03",
+      "E04",
+      "E06"
+    ]
+  },
+  "invalid_claims": [],
+  "citation_validity": 1.0,
+  "abstain_reason": null,
+  "evidence": [
+    {
+      "evidence_id": "E01",
+      "title": "traffic",
+      "source": "loki",
+      "query": "api/datasources/proxy/uid/loki/loki/api/v1/query?query=sum%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%5B120s%5D%29%29&time=1793888408000000000\napi/datasources/proxy/uid/loki/loki/api/v1/query?query=sum%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%5B420s%5D%29%29&time=1793888108000000000",
+      "status": "ok",
+      "summary": "Nginx istek hızı: son 2 dk 3664.0/dk, baseline 355.0/dk (10.3x)",
+      "data": {
+        "recent_per_min": 3664.0,
+        "baseline_per_min": 355.0,
+        "ratio": 10.3
+      },
+      "collected_at": "2026-11-05T18:12:05.976713+00:00"
+    },
+    {
+      "evidence_id": "E02",
+      "title": "status",
+      "source": "loki",
+      "query": "api/datasources/proxy/uid/loki/loki/api/v1/query?query=sum+by+%28status%29+%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%5B120s%5D%29%29&time=1793888408000000000\napi/datasources/proxy/uid/loki/loki/api/v1/query?query=sum+by+%28status%29+%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%5B420s%5D%29%29&time=1793888108000000000",
+      "status": "ok",
+      "summary": "Nginx durum payları son 2 dk: 2xx %22.8, 3xx %0.8, 429 %76.3; baseline: 2xx %92.9, 3xx %7.1",
+      "data": {
+        "recent": {
+          "2xx": 0.228,
+          "3xx": 0.008,
+          "429": 0.763
+        },
+        "baseline": {
+          "2xx": 0.929,
+          "3xx": 0.071
+        }
+      },
+      "collected_at": "2026-11-05T18:12:05.976713+00:00"
+    },
+    {
+      "evidence_id": "E03",
+      "title": "clients",
+      "source": "loki",
+      "query": "api/datasources/proxy/uid/loki/loki/api/v1/query?query=sum+by+%28remote_addr%29+%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%7C+remote_addr%3D~%22.%2A0%24%22+%5B120s%5D%29%29&time=1793888408000000000\napi/datasources/proxy/uid/loki/loki/api/v1/query?query=sum+by+%28remote_addr%29+%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%7C+remote_addr%3D~%22.%2A1%24%22+%5B120s%5D%29%29&time=1793888408000000000\napi/datasources/proxy/uid/loki/loki/api/v1/query?query=sum+by+%28remote_addr%29+%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%7C+remote_addr%3D~%22.%2A2%24%22+%5B120s%5D%29%29&time=1793888408000000000\napi/datasources/proxy/uid/loki/loki/api/v1/query?query=sum+by+%28remote_addr%29+%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%7C+remote_addr%3D~%22.%2A3%24%22+%5B120s%5D%29%29&time=1793888408000000000\napi/datasources/proxy/uid/loki/loki/api/v1/query?query=sum+by+%28remote_addr%29+%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%7C+remote_addr%3D~%22.%2A4%24%22+%5B120s%5D%29%29&time=1793888408000000000\napi/datasources/proxy/uid/loki/loki/api/v1/query?query=sum+by+%28remote_addr%29+%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%7C+remote_addr%3D~%22.%2A5%24%22+%5B120s%5D%29%29&time=1793888408000000000\napi/datasources/proxy/uid/loki/loki/api/v1/query?query=sum+by+%28remote_addr%29+%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%7C+remote_addr%3D~%22.%2A6%24%22+%5B120s%5D%29%29&time=1793888408000000000\napi/datasources/proxy/uid/loki/loki/api/v1/query?query=sum+by+%28remote_addr%29+%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%7C+remote_addr%3D~%22.%2A7%24%22+%5B120s%5D%29%29&time=1793888408000000000\napi/datasources/proxy/uid/loki/loki/api/v1/query?query=sum+by+%28remote_addr%29+%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%7C+remote_addr%3D~%22.%2A8%24%22+%5B120s%5D%29%29&time=1793888408000000000\napi/datasources/proxy/uid/loki/loki/api/v1/query?query=sum+by+%28remote_addr%29+%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%7C+remote_addr%3D~%22.%2A9%24%22+%5B120s%5D%29%29&time=1793888408000000000\napi/datasources/proxy/uid/loki/loki/api/v1/query?query=sum+by+%28remote_addr%29+%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%7C+remote_addr%3D~%22.%2A%5B%5E0-9%5D%24%22+%5B120s%5D%29%29&time=1793888408000000000\napi/datasources/proxy/uid/loki/loki/api/v1/query?query=sum+by+%28remote_addr%29+%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%7C+remote_addr%3D~%22.%2A0%24%22+%5B420s%5D%29%29&time=1793888108000000000\napi/datasources/proxy/uid/loki/loki/api/v1/query?query=sum+by+%28remote_addr%29+%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%7C+remote_addr%3D~%22.%2A1%24%22+%5B420s%5D%29%29&time=1793888108000000000\napi/datasources/proxy/uid/loki/loki/api/v1/query?query=sum+by+%28remote_addr%29+%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%7C+remote_addr%3D~%22.%2A2%24%22+%5B420s%5D%29%29&time=1793888108000000000\napi/datasources/proxy/uid/loki/loki/api/v1/query?query=sum+by+%28remote_addr%29+%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%7C+remote_addr%3D~%22.%2A3%24%22+%5B420s%5D%29%29&time=1793888108000000000\napi/datasources/proxy/uid/loki/loki/api/v1/query?query=sum+by+%28remote_addr%29+%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%7C+remote_addr%3D~%22.%2A4%24%22+%5B420s%5D%29%29&time=1793888108000000000\napi/datasources/proxy/uid/loki/loki/api/v1/query?query=sum+by+%28remote_addr%29+%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%7C+remote_addr%3D~%22.%2A5%24%22+%5B420s%5D%29%29&time=1793888108000000000\napi/datasources/proxy/uid/loki/loki/api/v1/query?query=sum+by+%28remote_addr%29+%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%7C+remote_addr%3D~%22.%2A6%24%22+%5B420s%5D%29%29&time=1793888108000000000\napi/datasources/proxy/uid/loki/loki/api/v1/query?query=sum+by+%28remote_addr%29+%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%7C+remote_addr%3D~%22.%2A7%24%22+%5B420s%5D%29%29&time=1793888108000000000\napi/datasources/proxy/uid/loki/loki/api/v1/query?query=sum+by+%28remote_addr%29+%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%7C+remote_addr%3D~%22.%2A8%24%22+%5B420s%5D%29%29&time=1793888108000000000\napi/datasources/proxy/uid/loki/loki/api/v1/query?query=sum+by+%28remote_addr%29+%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%7C+remote_addr%3D~%22.%2A9%24%22+%5B420s%5D%29%29&time=1793888108000000000\napi/datasources/proxy/uid/loki/loki/api/v1/query?query=sum+by+%28remote_addr%29+%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%7C+remote_addr%3D~%22.%2A%5B%5E0-9%5D%24%22+%5B420s%5D%29%29&time=1793888108000000000",
+      "status": "ok",
+      "summary": "Farklı istemci IP'si son 2 dk 195, baseline (7 dk) 629; son 2 dk en yoğunlar: client-1 %89.6, client-2 %0.1, client-3 %0.1; baseline'da en yoğun IP'nin payı %0.4",
+      "data": {
+        "distinct_recent": 195,
+        "distinct_baseline": 629,
+        "top_recent": [
+          {
+            "client": "client-1",
+            "requests": 6567,
+            "share": 0.896
+          },
+          {
+            "client": "client-2",
+            "requests": 9,
+            "share": 0.001
+          },
+          {
+            "client": "client-3",
+            "requests": 9,
+            "share": 0.001
+          }
+        ],
+        "top_share_baseline": 0.004
+      },
+      "collected_at": "2026-11-05T18:12:05.976713+00:00"
+    },
+    {
+      "evidence_id": "E04",
+      "title": "client-1",
+      "source": "loki",
+      "query": "api/datasources/proxy/uid/loki/loki/api/v1/query?query=topk%2850%2C+sum+by+%28path%2C+status%29+%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%7C+remote_addr%3D%2245.142.120.18%22+%5B120s%5D%29%29%29&time=1793888408000000000\napi/datasources/proxy/uid/loki/loki/api/v1/query?query=count%28sum+by+%28session%29+%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%7C+remote_addr%3D%2245.142.120.18%22+%7C+session%21%3D%22%22+%5B120s%5D%29%29%29&time=1793888408000000000\napi/datasources/proxy/uid/loki/loki/api/v1/query?query=sum%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%7C+remote_addr%3D%2245.142.120.18%22+%7C+session%3D%22%22+%5B120s%5D%29%29&time=1793888408000000000",
+      "status": "ok",
+      "summary": "client-1 son 2 dk: 6567 istek (home 6567); 429 5592; farklı oturum çerezi 0; çerezsiz istek payı %100.0",
+      "data": {
+        "requests": 6567,
+        "pages": {
+          "home": 6567
+        },
+        "rate_limited": 5592,
+        "sessions": 0,
+        "cookieless_share": 1.0
+      },
+      "collected_at": "2026-11-05T18:12:05.976713+00:00"
+    },
+    {
+      "evidence_id": "E05",
+      "title": "client-2",
+      "source": "loki",
+      "query": "api/datasources/proxy/uid/loki/loki/api/v1/query?query=topk%2850%2C+sum+by+%28path%2C+status%29+%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%7C+remote_addr%3D%22212.253.66.31%22+%5B120s%5D%29%29%29&time=1793888408000000000\napi/datasources/proxy/uid/loki/loki/api/v1/query?query=count%28sum+by+%28session%29+%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%7C+remote_addr%3D%22212.253.66.31%22+%7C+session%21%3D%22%22+%5B120s%5D%29%29%29&time=1793888408000000000\napi/datasources/proxy/uid/loki/loki/api/v1/query?query=sum%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%7C+remote_addr%3D%22212.253.66.31%22+%7C+session%3D%22%22+%5B120s%5D%29%29&time=1793888408000000000",
+      "status": "ok",
+      "summary": "client-2 son 2 dk: 9 istek (home 1, cart 2, cart_add 2, checkout 1, product 3); 429 0; farklı oturum çerezi 1; çerezsiz istek payı %11.1",
+      "data": {
+        "requests": 9,
+        "pages": {
+          "home": 1,
+          "cart": 2,
+          "cart_add": 2,
+          "checkout": 1,
+          "product": 3
+        },
+        "rate_limited": 0,
+        "sessions": 1,
+        "cookieless_share": 0.111
+      },
+      "collected_at": "2026-11-05T18:12:05.976713+00:00"
+    },
+    {
+      "evidence_id": "E06",
+      "title": "rate_limited",
+      "source": "loki",
+      "query": "api/datasources/proxy/uid/loki/loki/api/v1/query?query=topk%283%2C+sum+by+%28remote_addr%29+%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%7C+status%3D%22429%22+%5B120s%5D%29%29%29&time=1793888408000000000\napi/datasources/proxy/uid/loki/loki/api/v1/query?query=sum%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%7C+status%3D%22429%22+%5B120s%5D%29%29&time=1793888408000000000",
+      "status": "ok",
+      "summary": "Son 2 dk 429 toplamı 5592; en çok 429 alanlar: client-1 5592 (%100.0)",
+      "data": {
+        "total": 5592,
+        "top": [
+          {
+            "client": "client-1",
+            "count": 5592,
+            "share": 1.0
+          }
+        ]
+      },
+      "collected_at": "2026-11-05T18:12:05.976713+00:00"
+    },
+    {
+      "evidence_id": "E07",
+      "title": "funnel",
+      "source": "loki",
+      "query": "api/datasources/proxy/uid/loki/loki/api/v1/query?query=topk%2850%2C+sum+by+%28path%2C+status%29+%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%7C+status%21%3D%22429%22+%5B120s%5D%29%29%29&time=1793888408000000000\napi/datasources/proxy/uid/loki/loki/api/v1/query?query=topk%2850%2C+sum+by+%28path%2C+status%29+%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%7C+status%21%3D%22429%22+%5B420s%5D%29%29%29&time=1793888108000000000",
+      "status": "ok",
+      "summary": "Sunulan (429 olmayan) istekler, dakika başı. Son 2 dk: home 577.5, product 222.5, cart_add 31.0, checkout_ok 6.0, checkout_failed 0, dönüşüm 0.0104. Baseline: home 89.9, product 211.3, cart_add 25.3, checkout_ok 3.3, checkout_failed 0, dönüşüm 0.0367",
+      "data": {
+        "recent": {
+          "home": 577.5,
+          "cart": 31.0,
+          "cart_add": 31.0,
+          "checkout_ok": 6.0,
+          "product": 222.5,
+          "conversion": 0.0104
+        },
+        "baseline": {
+          "home": 89.9,
+          "cart": 25.3,
+          "cart_add": 25.3,
+          "checkout_ok": 3.3,
+          "product": 211.3,
+          "conversion": 0.0367
+        }
+      },
+      "collected_at": "2026-11-05T18:12:05.976713+00:00"
+    },
+    {
+      "evidence_id": "E08",
+      "title": "orders",
+      "source": "prometheus",
+      "query": "api/datasources/proxy/uid/prometheus/api/v1/query?query=sum%28increase%28shop_orders_total%5B120s%5D%29%29&time=1793888408\napi/datasources/proxy/uid/prometheus/api/v1/query?query=sum%28increase%28shop_orders_total%5B420s%5D%29%29&time=1793888108\napi/datasources/proxy/uid/prometheus/api/v1/query?query=sum+by+%28status%29+%28increase%28shop_payments_total%5B120s%5D%29%29&time=1793888408",
+      "status": "ok",
+      "summary": "Sipariş/dk (shop_orders_total): son 2 dk 6.0, baseline 3.4; son 2 dk ödemeler {'approved': 12.0}",
+      "data": {
+        "recent_per_min": 6.0,
+        "baseline_per_min": 3.4,
+        "payments_recent": {
+          "approved": 12.0
+        }
+      },
+      "collected_at": "2026-11-05T18:12:05.976713+00:00"
+    },
+    {
+      "evidence_id": "E09",
+      "title": "app_errors",
+      "source": "loki",
+      "query": "api/datasources/proxy/uid/loki/loki/api/v1/query?query=sum+by+%28service_name%2C+exception_type%29+%28count_over_time%28%7Bservice_name%3D~%22.%2B%22%2C+service_name%21%3D%22nginx%22%7D+%7C%3D+%22unhandled+error%22+%5B120s%5D%29%29&time=1793888408000000000\napi/datasources/proxy/uid/loki/loki/api/v1/query?query=sum+by+%28service_name%2C+exception_type%29+%28count_over_time%28%7Bservice_name%3D~%22.%2B%22%2C+service_name%21%3D%22nginx%22%7D+%7C%3D+%22unhandled+error%22+%5B420s%5D%29%29&time=1793888108000000000\napi/datasources/proxy/uid/loki/loki/api/v1/query_range?end=1793888408000000000&limit=20&query=%7Bservice_name%3D~%22.%2B%22%2C+service_name%21%3D%22nginx%22%7D+%7C%3D+%22unhandled+error%22&start=1793888288000000000",
+      "status": "ok",
+      "summary": "Yakalanmamış uygulama hataları son 2 dk: yok; baseline: yok",
+      "data": {
+        "recent": [],
+        "baseline": [],
+        "untrusted_log_excerpts": {}
+      },
+      "collected_at": "2026-11-05T18:12:05.976713+00:00"
+    },
+    {
+      "evidence_id": "E10",
+      "title": "latency",
+      "source": "prometheus",
+      "query": "api/datasources/proxy/uid/prometheus/api/v1/query?query=histogram_quantile%280.95%2C+sum+by+%28le%29+%28rate%28http_server_duration_milliseconds_bucket%7Bjob%3D%22frontend%22%7D%5B120s%5D%29%29%29&time=1793888408\napi/datasources/proxy/uid/prometheus/api/v1/query?query=histogram_quantile%280.95%2C+sum+by+%28le%29+%28rate%28http_server_duration_milliseconds_bucket%7Bjob%3D%22frontend%22%7D%5B420s%5D%29%29%29&time=1793888108",
+      "status": "ok",
+      "summary": "frontend p95 gecikme: son 2 dk 103.7 ms, baseline 72.1 ms",
+      "data": {
+        "recent_p95_ms": 103.7,
+        "baseline_p95_ms": 72.1
+      },
+      "collected_at": "2026-11-05T18:12:05.976713+00:00"
+    },
+    {
+      "evidence_id": "E11",
+      "title": "error_traces",
+      "source": "tempo",
+      "query": "api/datasources/proxy/uid/tempo/api/search?end=1793888408&limit=100&q=%7B+status+%3D+error+%7D&start=1793888288",
+      "status": "ok",
+      "summary": "Tempo son 2 dk hatalı trace: 0; kök işlemler: yok",
+      "data": {
+        "count": 0,
+        "limit_reached": false,
+        "by_root": {}
+      },
+      "collected_at": "2026-11-05T18:12:05.976713+00:00"
+    },
+    {
+      "evidence_id": "E12",
+      "title": "deploys",
+      "source": "grafana",
+      "query": "api/annotations?from=1793887688000&tags=deploy&to=1793888408000",
+      "status": "ok",
+      "summary": "Penceredeki deploy marker'ları: yok",
+      "data": {
+        "deploys": []
+      },
+      "collected_at": "2026-11-05T18:12:05.976713+00:00"
+    },
+    {
+      "evidence_id": "E13",
+      "title": "campaigns",
+      "source": "campaigns.json",
+      "query": "/home/anilsrml/Desktop/watcher/.claude/worktrees/practical-lamport-cb2acb/scenarios/campaigns.json",
+      "status": "ok",
+      "summary": "Kampanya takvimi (pencereyle örtüşen): yok",
+      "data": {
+        "campaigns": []
+      },
+      "collected_at": "2026-11-05T18:12:05.976713+00:00"
+    }
+  ],
+  "aliases": {
+    "client-1": "45.142.120.18",
+    "client-2": "212.253.66.31",
+    "client-3": "176.88.248.162"
+  },
+  "metadata": {
+    "model": "openrouter/deepseek/deepseek-v4.1-flash-1017",
+    "input_tokens": 2682,
+    "output_tokens": 3080,
+    "cost_usd": null,
+    "llm_seconds": 13.6,
+    "queries": 46,
+    "collect_seconds": 9.3,
+    "total_seconds": 22.9
+  }
+}

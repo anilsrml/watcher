@@ -27,7 +27,13 @@ def investigate(
     evidence, aliases = telemetry.collect(start, end, fetch, campaigns_path)
     collect_seconds = round(time.monotonic() - started, 1)
     evidence = store.save_evidence(db, incident_id, evidence)
+    for e in evidence:
+        print(f"  {e['evidence_id']} [{e['status']}] {e['summary']}", flush=True)
     window = {"start": start.isoformat(), "end": end.isoformat()}
+    print(
+        f"  {len(evidence)} kanıt toplandı ({collect_seconds} sn); LLM'e gönderiliyor",
+        flush=True,
+    )
     answer = complete(classify.build_messages(incident_id, window, evidence))
     result = {
         "incident_id": incident_id,

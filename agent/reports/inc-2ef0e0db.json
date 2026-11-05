@@ -1,0 +1,436 @@
+{
+  "incident_id": "inc-2ef0e0db",
+  "window": {
+    "start": "2026-11-05T11:33:58.129245+00:00",
+    "end": "2026-11-05T11:45:58.129245+00:00"
+  },
+  "impact": [
+    {
+      "text": "Dönüşüm 0.0489'dan 0.0278'e, checkout_ok 4.4/dk'dan 2.5/dk'ya düştü; sipariş/dk 4.4'ten 2.4'e indi.",
+      "evidence_ids": [
+        "E07",
+        "E08"
+      ]
+    },
+    {
+      "text": "Checkout kaynaklı KeyError ve frontend POST /checkout 500 hataları ödeme akışını bozuyor; son 2 dk 5xx payı %0.3.",
+      "evidence_ids": [
+        "E09",
+        "E11",
+        "E02"
+      ]
+    },
+    {
+      "text": "Gecikme baseline ile benzer (p95 91.1 ms vs 97.0 ms); sorun yük kaynaklı görünmüyor.",
+      "evidence_ids": [
+        "E10"
+      ]
+    }
+  ],
+  "timeline": [
+    {
+      "text": "Alarmdan 103 sn önce checkout v1.1.0 deploy edildi.",
+      "evidence_ids": [
+        "E12"
+      ]
+    },
+    {
+      "text": "Son 2 dk içinde checkout KeyError, frontend HTTPStatusError 500 ve ConnectError görüldü.",
+      "evidence_ids": [
+        "E09",
+        "E11"
+      ]
+    },
+    {
+      "text": "Son 2 dk sipariş ve dönüşüm baseline'ın altında kaldı.",
+      "evidence_ids": [
+        "E07",
+        "E08"
+      ]
+    },
+    {
+      "text": "Nginx istek hızı baseline ile aynı seviyede (348.5/dk vs 352.0/dk).",
+      "evidence_ids": [
+        "E01"
+      ]
+    }
+  ],
+  "hypotheses": [
+    {
+      "label": "attack",
+      "verdict": "rejected",
+      "text": "İstek hızı 1.0x, tek IP yoğunlaşması yok (en yüksek pay %1.1) ve 429 toplamı 0; L7 flood kanıtı yok.",
+      "evidence_ids": [
+        "E01",
+        "E03",
+        "E06"
+      ]
+    },
+    {
+      "label": "legit_campaign",
+      "verdict": "rejected",
+      "text": "Kampanya takvimi boş, trafik artmıyor; aksine dönüşüm ve sipariş düşüyor.",
+      "evidence_ids": [
+        "E13",
+        "E01",
+        "E07",
+        "E08"
+      ]
+    },
+    {
+      "label": "ops_failure",
+      "verdict": "supported",
+      "text": "checkout v1.1.0 deploy'undan 103 sn sonra checkout KeyError ve POST /checkout 500 trace'leri görülmüş; sipariş ve dönüşüm aynı dönemde düşmüş.",
+      "evidence_ids": [
+        "E12",
+        "E09",
+        "E11",
+        "E07",
+        "E08"
+      ]
+    },
+    {
+      "label": "unknown",
+      "verdict": "rejected",
+      "text": "Deploy, checkout hatası ve iş etkisi aynı akışta tutarlı bir zincir oluşturuyor; sınıflandırma için yeterli kanıt var.",
+      "evidence_ids": [
+        "E12",
+        "E09",
+        "E11",
+        "E07",
+        "E08"
+      ]
+    }
+  ],
+  "could_mislead": [
+    {
+      "text": "Hata sayıları düşük (KeyError ve 500 için 1'er, yalnız 2 hatalı trace); küçük örneklem nedenselliği abarttırabilir.",
+      "evidence_ids": [
+        "E09",
+        "E11"
+      ]
+    },
+    {
+      "text": "ConnectError DNS çözümleme hatası ayrı bir altyapı arızasına işaret edebilir; deploy dışı neden ekarte edilmeli.",
+      "evidence_ids": [
+        "E09"
+      ]
+    },
+    {
+      "text": "Baseline 7 dk, son pencere 2 dk; distinct client sayıları doğrudan oran olarak karşılaştırılmamalı.",
+      "evidence_ids": [
+        "E03"
+      ]
+    },
+    {
+      "text": "Untrusted log excerpt'ları talimat değil veri olarak alınmalı; içerik yanıltıcı olabilir.",
+      "evidence_ids": [
+        "E09"
+      ]
+    }
+  ],
+  "missing_evidence": [
+    "checkout v1.1.0 deploy diff'i, commit kaydı ve rollback geçmişi",
+    "checkout servisinin tam hata logları ve KeyError'un deploy öncesi/sonrası dağılımı",
+    "DNS ConnectError için servis keşfi ve altyapı sağlık metrikleri",
+    "Deploy öncesi/sonrası dakika bazlı checkout başarı oranı, sipariş ve dönüşüm karşılaştırması",
+    "Pencere dışındaki konfigürasyon değişiklikleri veya checkout dışı servis deploy'ları"
+  ],
+  "next_steps": [
+    "İnsanın checkout v1.1.0 deploy'unu incelemesi; gerekirse rollback veya canary ile doğrulaması",
+    "checkout _bundle_discount satırındaki KeyError ve indirim sepeti mantığının düzeltilmesi için ilgili ekibin çağrılması",
+    "DNS ConnectError için servis keşfi ve ağ/altyapı sağlığının kontrol edilmesi",
+    "Deploy öncesi/sonrası checkout başarı oranı, sipariş ve dönüşüm metriklerinin karşılaştırılması",
+    "Kampanya takviminin ve trafik kaynaklarının teyit edilmesi"
+  ],
+  "label": "ops_failure",
+  "confidence": "high",
+  "decision": {
+    "text": "checkout v1.1.0 deploy'undan kısa süre sonra checkout KeyError/500 hataları ve dönüşüm-sipariş düşüşü görüldüğü için olay operasyonel arıza olarak sınıflandırıldı.",
+    "evidence_ids": [
+      "E12",
+      "E09",
+      "E11",
+      "E07",
+      "E08"
+    ]
+  },
+  "invalid_claims": [],
+  "citation_validity": 1.0,
+  "abstain_reason": null,
+  "evidence": [
+    {
+      "evidence_id": "E01",
+      "title": "traffic",
+      "source": "loki",
+      "query": "api/datasources/proxy/uid/loki/loki/api/v1/query?query=sum%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%5B120s%5D%29%29&time=1793879158000000000\napi/datasources/proxy/uid/loki/loki/api/v1/query?query=sum%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%5B420s%5D%29%29&time=1793878858000000000",
+      "status": "ok",
+      "summary": "Nginx istek hızı: son 2 dk 348.5/dk, baseline 352.0/dk (1.0x)",
+      "data": {
+        "recent_per_min": 348.5,
+        "baseline_per_min": 352.0,
+        "ratio": 1.0
+      },
+      "collected_at": "2026-11-05T18:14:34.491536+00:00"
+    },
+    {
+      "evidence_id": "E02",
+      "title": "status",
+      "source": "loki",
+      "query": "api/datasources/proxy/uid/loki/loki/api/v1/query?query=sum+by+%28status%29+%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%5B120s%5D%29%29&time=1793879158000000000\napi/datasources/proxy/uid/loki/loki/api/v1/query?query=sum+by+%28status%29+%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%5B420s%5D%29%29&time=1793878858000000000",
+      "status": "ok",
+      "summary": "Nginx durum payları son 2 dk: 2xx %91.4, 3xx %8.3, 5xx %0.3; baseline: 2xx %92.4, 3xx %7.6",
+      "data": {
+        "recent": {
+          "2xx": 0.914,
+          "3xx": 0.083,
+          "5xx": 0.003
+        },
+        "baseline": {
+          "2xx": 0.924,
+          "3xx": 0.076
+        }
+      },
+      "collected_at": "2026-11-05T18:14:34.491536+00:00"
+    },
+    {
+      "evidence_id": "E03",
+      "title": "clients",
+      "source": "loki",
+      "query": "api/datasources/proxy/uid/loki/loki/api/v1/query?query=sum+by+%28remote_addr%29+%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%7C+remote_addr%3D~%22.%2A0%24%22+%5B120s%5D%29%29&time=1793879158000000000\napi/datasources/proxy/uid/loki/loki/api/v1/query?query=sum+by+%28remote_addr%29+%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%7C+remote_addr%3D~%22.%2A1%24%22+%5B120s%5D%29%29&time=1793879158000000000\napi/datasources/proxy/uid/loki/loki/api/v1/query?query=sum+by+%28remote_addr%29+%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%7C+remote_addr%3D~%22.%2A2%24%22+%5B120s%5D%29%29&time=1793879158000000000\napi/datasources/proxy/uid/loki/loki/api/v1/query?query=sum+by+%28remote_addr%29+%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%7C+remote_addr%3D~%22.%2A3%24%22+%5B120s%5D%29%29&time=1793879158000000000\napi/datasources/proxy/uid/loki/loki/api/v1/query?query=sum+by+%28remote_addr%29+%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%7C+remote_addr%3D~%22.%2A4%24%22+%5B120s%5D%29%29&time=1793879158000000000\napi/datasources/proxy/uid/loki/loki/api/v1/query?query=sum+by+%28remote_addr%29+%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%7C+remote_addr%3D~%22.%2A5%24%22+%5B120s%5D%29%29&time=1793879158000000000\napi/datasources/proxy/uid/loki/loki/api/v1/query?query=sum+by+%28remote_addr%29+%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%7C+remote_addr%3D~%22.%2A6%24%22+%5B120s%5D%29%29&time=1793879158000000000\napi/datasources/proxy/uid/loki/loki/api/v1/query?query=sum+by+%28remote_addr%29+%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%7C+remote_addr%3D~%22.%2A7%24%22+%5B120s%5D%29%29&time=1793879158000000000\napi/datasources/proxy/uid/loki/loki/api/v1/query?query=sum+by+%28remote_addr%29+%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%7C+remote_addr%3D~%22.%2A8%24%22+%5B120s%5D%29%29&time=1793879158000000000\napi/datasources/proxy/uid/loki/loki/api/v1/query?query=sum+by+%28remote_addr%29+%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%7C+remote_addr%3D~%22.%2A9%24%22+%5B120s%5D%29%29&time=1793879158000000000\napi/datasources/proxy/uid/loki/loki/api/v1/query?query=sum+by+%28remote_addr%29+%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%7C+remote_addr%3D~%22.%2A%5B%5E0-9%5D%24%22+%5B120s%5D%29%29&time=1793879158000000000\napi/datasources/proxy/uid/loki/loki/api/v1/query?query=sum+by+%28remote_addr%29+%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%7C+remote_addr%3D~%22.%2A0%24%22+%5B420s%5D%29%29&time=1793878858000000000\napi/datasources/proxy/uid/loki/loki/api/v1/query?query=sum+by+%28remote_addr%29+%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%7C+remote_addr%3D~%22.%2A1%24%22+%5B420s%5D%29%29&time=1793878858000000000\napi/datasources/proxy/uid/loki/loki/api/v1/query?query=sum+by+%28remote_addr%29+%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%7C+remote_addr%3D~%22.%2A2%24%22+%5B420s%5D%29%29&time=1793878858000000000\napi/datasources/proxy/uid/loki/loki/api/v1/query?query=sum+by+%28remote_addr%29+%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%7C+remote_addr%3D~%22.%2A3%24%22+%5B420s%5D%29%29&time=1793878858000000000\napi/datasources/proxy/uid/loki/loki/api/v1/query?query=sum+by+%28remote_addr%29+%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%7C+remote_addr%3D~%22.%2A4%24%22+%5B420s%5D%29%29&time=1793878858000000000\napi/datasources/proxy/uid/loki/loki/api/v1/query?query=sum+by+%28remote_addr%29+%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%7C+remote_addr%3D~%22.%2A5%24%22+%5B420s%5D%29%29&time=1793878858000000000\napi/datasources/proxy/uid/loki/loki/api/v1/query?query=sum+by+%28remote_addr%29+%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%7C+remote_addr%3D~%22.%2A6%24%22+%5B420s%5D%29%29&time=1793878858000000000\napi/datasources/proxy/uid/loki/loki/api/v1/query?query=sum+by+%28remote_addr%29+%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%7C+remote_addr%3D~%22.%2A7%24%22+%5B420s%5D%29%29&time=1793878858000000000\napi/datasources/proxy/uid/loki/loki/api/v1/query?query=sum+by+%28remote_addr%29+%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%7C+remote_addr%3D~%22.%2A8%24%22+%5B420s%5D%29%29&time=1793878858000000000\napi/datasources/proxy/uid/loki/loki/api/v1/query?query=sum+by+%28remote_addr%29+%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%7C+remote_addr%3D~%22.%2A9%24%22+%5B420s%5D%29%29&time=1793878858000000000\napi/datasources/proxy/uid/loki/loki/api/v1/query?query=sum+by+%28remote_addr%29+%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%7C+remote_addr%3D~%22.%2A%5B%5E0-9%5D%24%22+%5B420s%5D%29%29&time=1793878858000000000",
+      "status": "ok",
+      "summary": "Farklı istemci IP'si son 2 dk 195, baseline (7 dk) 629; son 2 dk en yoğunlar: client-1 %1.1, client-2 %1.1, client-3 %1.1; baseline'da en yoğun IP'nin payı %0.4",
+      "data": {
+        "distinct_recent": 195,
+        "distinct_baseline": 629,
+        "top_recent": [
+          {
+            "client": "client-1",
+            "requests": 8,
+            "share": 0.011
+          },
+          {
+            "client": "client-2",
+            "requests": 8,
+            "share": 0.011
+          },
+          {
+            "client": "client-3",
+            "requests": 8,
+            "share": 0.011
+          }
+        ],
+        "top_share_baseline": 0.004
+      },
+      "collected_at": "2026-11-05T18:14:34.491536+00:00"
+    },
+    {
+      "evidence_id": "E04",
+      "title": "client-1",
+      "source": "loki",
+      "query": "api/datasources/proxy/uid/loki/loki/api/v1/query?query=topk%2850%2C+sum+by+%28path%2C+status%29+%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%7C+remote_addr%3D%22212.253.209.160%22+%5B120s%5D%29%29%29&time=1793879158000000000\napi/datasources/proxy/uid/loki/loki/api/v1/query?query=count%28sum+by+%28session%29+%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%7C+remote_addr%3D%22212.253.209.160%22+%7C+session%21%3D%22%22+%5B120s%5D%29%29%29&time=1793879158000000000\napi/datasources/proxy/uid/loki/loki/api/v1/query?query=sum%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%7C+remote_addr%3D%22212.253.209.160%22+%7C+session%3D%22%22+%5B120s%5D%29%29&time=1793879158000000000",
+      "status": "ok",
+      "summary": "client-1 son 2 dk: 8 istek (home 1, cart 2, cart_add 2, checkout 1, product 2); 429 0; farklı oturum çerezi 1; çerezsiz istek payı %12.5",
+      "data": {
+        "requests": 8,
+        "pages": {
+          "home": 1,
+          "cart": 2,
+          "cart_add": 2,
+          "checkout": 1,
+          "product": 2
+        },
+        "rate_limited": 0,
+        "sessions": 1,
+        "cookieless_share": 0.125
+      },
+      "collected_at": "2026-11-05T18:14:34.491536+00:00"
+    },
+    {
+      "evidence_id": "E05",
+      "title": "client-2",
+      "source": "loki",
+      "query": "api/datasources/proxy/uid/loki/loki/api/v1/query?query=topk%2850%2C+sum+by+%28path%2C+status%29+%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%7C+remote_addr%3D%22176.88.243.104%22+%5B120s%5D%29%29%29&time=1793879158000000000\napi/datasources/proxy/uid/loki/loki/api/v1/query?query=count%28sum+by+%28session%29+%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%7C+remote_addr%3D%22176.88.243.104%22+%7C+session%21%3D%22%22+%5B120s%5D%29%29%29&time=1793879158000000000\napi/datasources/proxy/uid/loki/loki/api/v1/query?query=sum%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%7C+remote_addr%3D%22176.88.243.104%22+%7C+session%3D%22%22+%5B120s%5D%29%29&time=1793879158000000000",
+      "status": "ok",
+      "summary": "client-2 son 2 dk: 8 istek (home 1, cart 2, cart_add 2, product 3); 429 0; farklı oturum çerezi 1; çerezsiz istek payı %12.5",
+      "data": {
+        "requests": 8,
+        "pages": {
+          "home": 1,
+          "cart": 2,
+          "cart_add": 2,
+          "product": 3
+        },
+        "rate_limited": 0,
+        "sessions": 1,
+        "cookieless_share": 0.125
+      },
+      "collected_at": "2026-11-05T18:14:34.491536+00:00"
+    },
+    {
+      "evidence_id": "E06",
+      "title": "rate_limited",
+      "source": "loki",
+      "query": "api/datasources/proxy/uid/loki/loki/api/v1/query?query=topk%283%2C+sum+by+%28remote_addr%29+%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%7C+status%3D%22429%22+%5B120s%5D%29%29%29&time=1793879158000000000\napi/datasources/proxy/uid/loki/loki/api/v1/query?query=sum%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%7C+status%3D%22429%22+%5B120s%5D%29%29&time=1793879158000000000",
+      "status": "ok",
+      "summary": "Son 2 dk 429 toplamı 0; en çok 429 alanlar: yok",
+      "data": {
+        "total": 0,
+        "top": []
+      },
+      "collected_at": "2026-11-05T18:14:34.491536+00:00"
+    },
+    {
+      "evidence_id": "E07",
+      "title": "funnel",
+      "source": "loki",
+      "query": "api/datasources/proxy/uid/loki/loki/api/v1/query?query=topk%2850%2C+sum+by+%28path%2C+status%29+%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%7C+status%21%3D%22429%22+%5B120s%5D%29%29%29&time=1793879158000000000\napi/datasources/proxy/uid/loki/loki/api/v1/query?query=topk%2850%2C+sum+by+%28path%2C+status%29+%28count_over_time%28%7Bservice_name%3D%22nginx%22%7D+%7C+json+%7C+path%21%3D%22%2Fhealthz%22+%7C+status%21%3D%22429%22+%5B420s%5D%29%29%29&time=1793878858000000000",
+      "status": "ok",
+      "summary": "Sunulan (429 olmayan) istekler, dakika başı. Son 2 dk: home 90.0, product 197.0, cart_add 29.0, checkout_ok 2.5, checkout_failed 1.0, dönüşüm 0.0278. Baseline: home 90.0, product 204.1, cart_add 26.7, checkout_ok 4.4, checkout_failed 0, dönüşüm 0.0489",
+      "data": {
+        "recent": {
+          "home": 90.0,
+          "cart": 29.0,
+          "cart_add": 29.0,
+          "checkout_ok": 2.5,
+          "checkout_failed": 1.0,
+          "product": 197.0,
+          "conversion": 0.0278
+        },
+        "baseline": {
+          "home": 90.0,
+          "cart": 26.7,
+          "cart_add": 26.7,
+          "checkout_ok": 4.4,
+          "product": 204.1,
+          "conversion": 0.0489
+        }
+      },
+      "collected_at": "2026-11-05T18:14:34.491536+00:00"
+    },
+    {
+      "evidence_id": "E08",
+      "title": "orders",
+      "source": "prometheus",
+      "query": "api/datasources/proxy/uid/prometheus/api/v1/query?query=sum%28increase%28shop_orders_total%5B120s%5D%29%29&time=1793879158\napi/datasources/proxy/uid/prometheus/api/v1/query?query=sum%28increase%28shop_orders_total%5B420s%5D%29%29&time=1793878858\napi/datasources/proxy/uid/prometheus/api/v1/query?query=sum+by+%28status%29+%28increase%28shop_payments_total%5B120s%5D%29%29&time=1793879158",
+      "status": "ok",
+      "summary": "Sipariş/dk (shop_orders_total): son 2 dk 2.4, baseline 4.4; son 2 dk ödemeler {'approved': 5.4}",
+      "data": {
+        "recent_per_min": 2.4,
+        "baseline_per_min": 4.4,
+        "payments_recent": {
+          "approved": 5.4
+        }
+      },
+      "collected_at": "2026-11-05T18:14:34.491536+00:00"
+    },
+    {
+      "evidence_id": "E09",
+      "title": "app_errors",
+      "source": "loki",
+      "query": "api/datasources/proxy/uid/loki/loki/api/v1/query?query=sum+by+%28service_name%2C+exception_type%29+%28count_over_time%28%7Bservice_name%3D~%22.%2B%22%2C+service_name%21%3D%22nginx%22%7D+%7C%3D+%22unhandled+error%22+%5B120s%5D%29%29&time=1793879158000000000\napi/datasources/proxy/uid/loki/loki/api/v1/query?query=sum+by+%28service_name%2C+exception_type%29+%28count_over_time%28%7Bservice_name%3D~%22.%2B%22%2C+service_name%21%3D%22nginx%22%7D+%7C%3D+%22unhandled+error%22+%5B420s%5D%29%29&time=1793878858000000000\napi/datasources/proxy/uid/loki/loki/api/v1/query_range?end=1793879158000000000&limit=20&query=%7Bservice_name%3D~%22.%2B%22%2C+service_name%21%3D%22nginx%22%7D+%7C%3D+%22unhandled+error%22&start=1793879038000000000",
+      "status": "ok",
+      "summary": "Yakalanmamış uygulama hataları son 2 dk: frontend ConnectError 1, frontend HTTPStatusError 1, checkout KeyError 1; baseline: yok",
+      "data": {
+        "recent": [
+          {
+            "service": "frontend",
+            "exception": "ConnectError",
+            "count": 1
+          },
+          {
+            "service": "frontend",
+            "exception": "HTTPStatusError",
+            "count": 1
+          },
+          {
+            "service": "checkout",
+            "exception": "KeyError",
+            "count": 1
+          }
+        ],
+        "baseline": [],
+        "untrusted_log_excerpts": {
+          "checkout KeyError": "  File \"/app/shop/app.py\", line 225, in _bundle_discount\n    return prices[int(cheapest)] // 10\n           ~~~~~~^^^^^^^^^^^^^^^\nKeyError: 1",
+          "frontend HTTPStatusError": "  File \"/app/.venv/lib/python3.12/site-packages/httpx/_models.py\", line 829, in raise_for_status\n    raise HTTPStatusError(message, request=request, response=self)\nhttpx.HTTPStatusError: Server error '500 Internal Server Error' for url 'http://checkout:8000/checkout'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/500",
+          "frontend ConnectError": "    self.gen.throw(value)\n  File \"/app/.venv/lib/python3.12/site-packages/httpx/_transports/default.py\", line 118, in map_httpcore_exceptions\n    raise mapped_exc(message) from exc\nhttpx.ConnectError: [Errno -3] Temporary failure in name resolution"
+        }
+      },
+      "collected_at": "2026-11-05T18:14:34.491536+00:00"
+    },
+    {
+      "evidence_id": "E10",
+      "title": "latency",
+      "source": "prometheus",
+      "query": "api/datasources/proxy/uid/prometheus/api/v1/query?query=histogram_quantile%280.95%2C+sum+by+%28le%29+%28rate%28http_server_duration_milliseconds_bucket%7Bjob%3D%22frontend%22%7D%5B120s%5D%29%29%29&time=1793879158\napi/datasources/proxy/uid/prometheus/api/v1/query?query=histogram_quantile%280.95%2C+sum+by+%28le%29+%28rate%28http_server_duration_milliseconds_bucket%7Bjob%3D%22frontend%22%7D%5B420s%5D%29%29%29&time=1793878858",
+      "status": "ok",
+      "summary": "frontend p95 gecikme: son 2 dk 91.1 ms, baseline 97.0 ms",
+      "data": {
+        "recent_p95_ms": 91.1,
+        "baseline_p95_ms": 97.0
+      },
+      "collected_at": "2026-11-05T18:14:34.491536+00:00"
+    },
+    {
+      "evidence_id": "E11",
+      "title": "error_traces",
+      "source": "tempo",
+      "query": "api/datasources/proxy/uid/tempo/api/search?end=1793879158&limit=100&q=%7B+status+%3D+error+%7D&start=1793879038",
+      "status": "ok",
+      "summary": "Tempo son 2 dk hatalı trace: 2; kök işlemler: frontend POST /checkout 2",
+      "data": {
+        "count": 2,
+        "limit_reached": false,
+        "by_root": {
+          "frontend POST /checkout": 2
+        }
+      },
+      "collected_at": "2026-11-05T18:14:34.491536+00:00"
+    },
+    {
+      "evidence_id": "E12",
+      "title": "deploys",
+      "source": "grafana",
+      "query": "api/annotations?from=1793878438000&tags=deploy&to=1793879158000",
+      "status": "ok",
+      "summary": "Penceredeki deploy marker'ları: checkout v1.1.0 alarmdan 103 sn önce",
+      "data": {
+        "deploys": [
+          {
+            "service": "checkout",
+            "version": "v1.1.0",
+            "seconds_before_alarm": 103
+          }
+        ]
+      },
+      "collected_at": "2026-11-05T18:14:34.491536+00:00"
+    },
+    {
+      "evidence_id": "E13",
+      "title": "campaigns",
+      "source": "campaigns.json",
+      "query": "/home/anilsrml/Desktop/watcher/.claude/worktrees/practical-lamport-cb2acb/scenarios/campaigns.json",
+      "status": "ok",
+      "summary": "Kampanya takvimi (pencereyle örtüşen): yok",
+      "data": {
+        "campaigns": []
+      },
+      "collected_at": "2026-11-05T18:14:34.491536+00:00"
+    }
+  ],
+  "aliases": {
+    "client-1": "212.253.209.160",
+    "client-2": "176.88.243.104",
+    "client-3": "176.234.105.166"
+  },
+  "metadata": {
+    "model": "openrouter/deepseek/deepseek-v4.1-flash-1017",
+    "input_tokens": 3107,
+    "output_tokens": 4492,
+    "cost_usd": null,
+    "llm_seconds": 8.8,
+    "queries": 46,
+    "collect_seconds": 7.6,
+    "total_seconds": 16.4
+  }
+}
