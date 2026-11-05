@@ -136,9 +136,9 @@ Agent ve yük lokalde çalışır. Böylece VPS zayıflarken agent da düşmez.
 | Log | Loki | Hata, stack trace, rate-limit kaydı |
 | Trace | Tempo | Servis bağımlılığı, yavaş span, hata zinciri |
 | Edge | Nginx JSON log | IP, UA, path, status, süre, rate-limit |
-| İş metrikleri | Uygulama | Sipariş/dk, dönüşüm, sepet terk, ödeme başarısı |
-| Değişiklik | Deploy marker | Hangi servis, hangi sürüm, ne zaman |
-| Kampanya | JSON takvim | Beklenen trafik ve dönüşüm |
+| İş metrikleri | Uygulama sayaçları (`shop_page_views_total{page}`, `shop_orders_total`, `shop_revenue_kurus_total`, `shop_payments_total{status}`) | Sipariş/dk, dönüşüm, sepet terk, ödeme başarısı. Oranlar PromQL ile hesaplanır, ör. dönüşüm: `sum(rate(shop_orders_total[5m])) / sum(rate(shop_page_views_total{page="home"}[5m]))` |
+| Değişiklik | Deploy marker: Grafana annotation (`deploy`, `service:<ad>`, `version:<vX.Y.Z>` etiketleri) ve metriklerde `service_version` etiketi | Hangi servis, hangi sürüm, ne zaman |
+| Kampanya | `scenarios/campaigns.json` | Beklenen trafik ve dönüşüm. Alanlar: `id`, `name`, `start`, `end` (saat dilimli ISO 8601), `expected_traffic_multiplier`, `expected_conversion`. Senaryo koşucusu yazar, agent okur. Ad ve id'ler pazarlama adıdır, senaryo etiketi içermez |
 
 ### İlk dört senaryo
 
@@ -207,6 +207,7 @@ Baseline'lar: rules-only, single-shot LLM, full agent. Her senaryo 3 kez çalı�
 - Yalnızca kendi VPS'imiz ve kendi test sitemiz.
 - Grafana, Prometheus, Loki, Tempo ve Nginx internete açık olmaz. Gerçek internet trafiği baseline'ı ve ground truth'u kirletmesin.
 - Erişim Tailscale ile yapılır. ufw gelen trafiği reddeder; açık olanlar Tailscale ağı, Tailscale UDP portu ve yalnız anahtarla acil durum SSH'ıdır. SSH'ta şifreyle giriş kapalı.
+- Grafana'da anonim erişim yalnız okur (`Viewer`); agent ve testler bu yolla sorgular. Yazma (deploy marker) `.env`'deki `GRAFANA_ADMIN_PASSWORD` ile yapılır.
 - `otel-collector` root çalışır ve `docker.sock` ile host `/`'u salt okunur bağlar (container ve host metrikleri için). `docker.sock`'un salt okunur bağlanması Docker API'sini kısıtlamaz; bu lab altyapısıdır, agent bu yetkiyi kullanmaz.
 - Docker portları ufw'yi atlar. Container portları yalnız Tailscale IP'sine veya `127.0.0.1`'e bağlanır, `0.0.0.0` kullanılmaz.
 - VPS'te `/etc/sysctl.d/99-watcher.conf` içinde `net.ipv4.ip_nonlocal_bind = 1` vardır. Açılışta Docker, Tailscale IP'si gelmeden de portları bağlayabilir.
@@ -237,7 +238,7 @@ Baseline'lar: rules-only, single-shot LLM, full agent. Her senaryo 3 kez çalı�
    - Bitti sayılır: Grafana ve uygulama Tailscale üzerinden açılır, internetten açılmaz.
 3. **Uygulamayı enstrümante et.** ✅ 2026-11-05: ödeme isteği tek trace'te 5 servisi, Postgres ve Redis çağrılarını gösterir (`tests/e2e/test_shop_flow.py`). Normal kullanıcı yolculuğu metrik, log ve trace olarak görünsün.
    - Bitti sayılır: Ana sayfa → ürün → sepet → checkout → payment akışı Grafana'da izlenir.
-4. **Edge ve iş verisini ekle.** Edge kısmı ✅ 2026-11-05: `otel-collector` (servis OTLP'si, Nginx JSON logu, host ve container metrikleri), Nginx'te istemci IP'si (`X-Forwarded-For` yalnız Tailscale'den) ve IP başına rate limit (10 istek/sn, 20 burst; 5. adımda kalibre edilecek). Kalan: sipariş/dk, dönüşüm, kampanya takvimi ve deploy marker hazır olsun.
+4. **Edge ve iş verisini ekle.** Edge kısmı ✅ 2026-11-05: `otel-collector` (servis OTLP'si, Nginx JSON logu, host ve container metrikleri), Nginx'te istemci IP'si (`X-Forwarded-For` yalnız Tailscale'den) ve IP başına rate limit (10 istek/sn, 20 burst; 5. adımda kalibre edilecek). İş verisi ✅ 2026-11-05: iş sayaçları, kampanya takvimi (`scenarios/campaigns.json`), deploy marker (`lab/deploy.py`).
    - Bitti sayılır: Saldırı ve kampanya kanıtı sorgulanabilir.
 5. **Senaryoları yaz.** k6 scriptleri ve 4 ground truth dosyası hazır olsun.
    - Bitti sayılır: Her senaryo 3 kez çalışır ve aynı pencereyle tekrar oynatılır.

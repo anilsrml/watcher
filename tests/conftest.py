@@ -3,8 +3,15 @@ from contextlib import AsyncExitStack
 
 import httpx
 import pytest
+from opentelemetry import metrics
+from opentelemetry.sdk.metrics import MeterProvider
+from opentelemetry.sdk.metrics.export import InMemoryMetricReader
 
 from shop.app import SERVICES, create_app
+
+# Gerçek OTel SDK; testler sayaçları bellekteki okuyucudan okur.
+METRICS = InMemoryMetricReader()
+metrics.set_meter_provider(MeterProvider(metric_readers=[METRICS]))
 
 # Yerel test altyapısı: docker --context default compose -f lab/compose.test.yaml up -d
 os.environ.setdefault(
@@ -16,6 +23,25 @@ os.environ.setdefault("REDIS_URL", "redis://127.0.0.1:56379/0")
 @pytest.fixture
 def anyio_backend():
     return "asyncio"
+
+
+@pytest.fixture
+def counter():
+    """Bir sayacın, verilen etiketlere uyan veri noktalarının toplamı (kümülatif)."""
+
+    def value(name, **attributes):
+        data = METRICS.get_metrics_data()
+        return sum(
+            point.value
+            for resource in (data.resource_metrics if data else [])
+            for scope in resource.scope_metrics
+            for metric in scope.metrics
+            if metric.name == name
+            for point in metric.data.data_points
+            if attributes.items() <= dict(point.attributes).items()
+        )
+
+    return value
 
 
 @pytest.fixture

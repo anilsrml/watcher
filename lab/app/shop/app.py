@@ -11,10 +11,22 @@ import httpx
 import redis.asyncio as redis
 from fastapi import FastAPI, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
+from opentelemetry import metrics
 from pydantic import BaseModel, Field
 
 logger = logging.getLogger("shop")
 logger.setLevel(logging.INFO)
+
+# İş metrikleri. Dönüşüm ve sipariş/dk uygulamada değil, PromQL ile hesaplanır.
+meter = metrics.get_meter("shop")
+PAGE_VIEWS = meter.create_counter(
+    "shop.page_views", description="Sayfa görüntülemeleri"
+)
+ORDERS = meter.create_counter("shop.orders", description="Tamamlanan siparişler")
+REVENUE = meter.create_counter(
+    "shop.revenue.kurus", description="Sipariş cirosu, kuruş"
+)
+PAYMENTS = meter.create_counter("shop.payments", description="Ödeme sonuçları")
 
 
 PRODUCTS = [
@@ -79,11 +91,13 @@ def _frontend(app: FastAPI) -> None:
             for p in products
         )
         logger.info("home page served")
+        PAGE_VIEWS.add(1, {"page": "home"})
         return page(f"<ul>{rows}</ul>")
 
     @app.get("/product/{product_id}", response_class=HTMLResponse)
     async def product_page(product_id: int) -> str:
         p = (await backend("GET", "product", f"/products/{product_id}")).json()
+        PAGE_VIEWS.add(1, {"page": "product"})
         return page(
             f"<h2>{escape(p['name'])}</h2><p>{price(p['price_kurus'])}</p>"
             '<form method="post" action="/cart/add">'
@@ -118,6 +132,7 @@ def _frontend(app: FastAPI) -> None:
         checkout = (
             '<form method="post" action="/checkout"><button>Ödeme yap</button></form>'
         )
+        PAGE_VIEWS.add(1, {"page": "cart"})
         body = f"<h2>Sepet</h2><ul>{rows}</ul><p>Toplam: {price(total)}</p>{checkout if items else ''}"
         return page(body)
 
@@ -127,6 +142,7 @@ def _frontend(app: FastAPI) -> None:
         order = (
             await backend("POST", "checkout", "/checkout", json=order_request)
         ).json()
+        PAGE_VIEWS.add(1, {"page": "checkout"})
         return page(
             f"<h2>Siparişiniz alındı</h2><p>Sipariş #{order['order_id']}, {price(order['total_kurus'])}</p>"
         )
@@ -186,6 +202,7 @@ def _payment(app: FastAPI) -> None:
     @app.post("/payments")
     async def pay(payment: Payment) -> dict:
         logger.info("payment approved")
+        PAYMENTS.add(1, {"status": "approved"})
         return {"status": "approved"}
 
 
@@ -224,6 +241,8 @@ def _checkout(app: FastAPI) -> None:
         )
         (await http.delete(cart_url)).raise_for_status()
         logger.info("order placed")
+        ORDERS.add(1)
+        REVENUE.add(total)
         return {"order_id": order_id, "total_kurus": total}
 
 
@@ -263,4 +282,9 @@ def create_app(service: str) -> FastAPI:
     app.state.schema = None
     app.state.uses_redis = False
     SERVICES[service](app)
+
+    @app.get("/healthz")
+    def healthz() -> dict:
+        return {"status": "ok"}
+
     return app

@@ -2,7 +2,7 @@ from uuid import uuid4
 
 import pytest
 
-from shop.app import create_app
+from shop.app import SERVICES, create_app
 
 FRONTEND = "http://frontend:8000"
 PRODUCT = "http://product:8000"
@@ -111,3 +111,29 @@ async def test_frontend_passes_shopper_errors_through(shop):
     unknown = await shop.post(f"{FRONTEND}/cart/add", data={"product_id": "999999"})
     assert unknown.status_code == 404
     assert (await shop.post(f"{FRONTEND}/checkout")).status_code == 400
+
+
+@pytest.mark.anyio
+async def test_shop_counts_page_views_orders_and_payments(shop, counter):
+    def snapshot():
+        return [
+            counter("shop.page_views", page="home"),
+            counter("shop.orders"),
+            counter("shop.revenue.kurus"),
+            counter("shop.payments", status="approved"),
+        ]
+
+    before = snapshot()
+    await shop.get(f"{FRONTEND}/")
+    await shop.post(f"{FRONTEND}/cart/add", data={"product_id": "3"})
+    await shop.post(f"{FRONTEND}/checkout")
+
+    assert [a - b for a, b in zip(snapshot(), before)] == [1, 1, 59900, 1]
+
+
+@pytest.mark.anyio
+async def test_every_service_reports_health(shop):
+    for name in SERVICES:
+        assert (await shop.get(f"http://{name}:8000/healthz")).json() == {
+            "status": "ok"
+        }

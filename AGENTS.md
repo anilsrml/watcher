@@ -28,6 +28,7 @@ uv run ruff format .   # format
 # Lab (VPS'te, dizüstünden). .env'de LAB_BIND_IP ve WATCHER_PUBLIC_IP gerekli
 docker --context watcher-vds compose -f lab/compose.yaml --env-file .env up -d --build   # image'lar VPS'te derlenir
 uv run --env-file .env pytest tests/e2e   # lab'a yalnız Tailscale'den erişildiğini doğrular
+uv run --env-file .env python lab/deploy.py checkout v1.4.2   # servisi yeni sürümle başlatır, Grafana'ya deploy marker yazar
 ```
 
 Uygulama kodu `lab/app/shop/` altındadır; 5 servis aynı koddan çıkar, rol `SERVICE` ile seçilir. Docker context uzakta çalıştığı için lab'da bind mount kullanılmaz; ayar dosyaları image'a gömülür.

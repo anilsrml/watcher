@@ -7,6 +7,11 @@ x-shop: &shop
     context: ..
     dockerfile: lab/app/Dockerfile
   image: watcher-shop:dev
+  healthcheck:
+    test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/healthz', timeout=2)"]
+    interval: 2s
+    timeout: 3s
+    retries: 15
   mem_limit: 256m
   restart: unless-stopped
 
@@ -24,6 +29,10 @@ services:
     image: grafana/otel-lgtm:0.37.0
     ports:
       - "${LAB_BIND_IP:?LAB_BIND_IP gerekli}:3000:3000"
+    environment:
+      # Anonim erişim (agent, testler) yalnız okur; yazma (deploy marker) admin parolasıyla.
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?GRAFANA_ADMIN_PASSWORD gerekli}
     volumes:
       - lgtm-data:/data
     mem_limit: 3g
@@ -77,6 +86,7 @@ services:
       <<: *shop-env
       SERVICE: frontend
       OTEL_SERVICE_NAME: frontend
+      OTEL_RESOURCE_ATTRIBUTES: service.version=${FRONTEND_VERSION:-v1.0.0}
 
   product:
     <<: *shop
@@ -84,6 +94,7 @@ services:
       <<: *shop-env
       SERVICE: product
       OTEL_SERVICE_NAME: product
+      OTEL_RESOURCE_ATTRIBUTES: service.version=${PRODUCT_VERSION:-v1.0.0}
     depends_on:
       postgres:
         condition: service_healthy
@@ -94,6 +105,7 @@ services:
       <<: *shop-env
       SERVICE: cart
       OTEL_SERVICE_NAME: cart
+      OTEL_RESOURCE_ATTRIBUTES: service.version=${CART_VERSION:-v1.0.0}
     depends_on:
       - redis
 
@@ -103,6 +115,7 @@ services:
       <<: *shop-env
       SERVICE: checkout
       OTEL_SERVICE_NAME: checkout
+      OTEL_RESOURCE_ATTRIBUTES: service.version=${CHECKOUT_VERSION:-v1.0.0}
     depends_on:
       postgres:
         condition: service_healthy
@@ -113,6 +126,7 @@ services:
       <<: *shop-env
       SERVICE: payment
       OTEL_SERVICE_NAME: payment
+      OTEL_RESOURCE_ATTRIBUTES: service.version=${PAYMENT_VERSION:-v1.0.0}
 
 volumes:
   lgtm-data:

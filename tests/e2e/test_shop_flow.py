@@ -60,3 +60,19 @@ def test_checkout_trace_spans_all_shop_services(checkout_start):
         return services if SHOP_SERVICES <= services else None
 
     assert eventually(trace_services) == SHOP_SERVICES
+
+
+@pytest.mark.parametrize(
+    "query",
+    [
+        'shop_page_views_total{job="frontend", page="home"}',
+        'shop_orders_total{job="checkout"}',
+        'shop_revenue_kurus_total{job="checkout"}',
+        'shop_payments_total{job="payment", status="approved"}',
+    ],
+)
+def test_business_metric_reaches_prometheus(checkout_start, query):
+    def series():
+        return get_json("prometheus/api/v1/query", query=query)["data"]["result"]
+
+    assert eventually(series)
