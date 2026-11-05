@@ -1,0 +1,31 @@
+{
+  "run_id": "attack-homepage-flood-01-r1",
+  "incident_id": "inc-6af22b72",
+  "scenario_id": "attack-homepage-flood-01",
+  "repetition": 1,
+  "trial": false,
+  "holdout": false,
+  "phases_s": [
+    600,
+    900,
+    300
+  ],
+  "started_at": "2026-11-05T11:03:28.451574+00:00",
+  "incident_start": "2026-11-05T11:13:28.451574+00:00",
+  "alarm_at": "2026-11-05T11:15:28.451574+00:00",
+  "incident_end": "2026-11-05T11:28:28.451574+00:00",
+  "planned_end": "2026-11-05T11:33:28.451574+00:00",
+  "window": {
+    "start": "2026-11-05T11:03:28.451574+00:00",
+    "end": "2026-11-05T11:15:28.451574+00:00"
+  },
+  "ground_truth_commit": "721186149ffc784c35cbe3c71086d188b9992ef4",
+  "host": {
+    "cpu_model": "Intel(R) Xeon(R) CPU E5-2699 v4 @ 2.20GHz",
+    "noise_job_s": 1.333
+  },
+  "aborted": false,
+  "attacker_ip": "45.142.120.18",
+  "k6_exit": 0,
+  "ended_at": "2026-11-05T11:33:49.918142+00:00"
+}

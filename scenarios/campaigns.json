@@ -47,6 +47,22 @@
       "end": "2026-11-05T09:04:03.553636+00:00",
       "expected_traffic_multiplier": 5,
       "expected_conversion": 0.05
+    },
+    {
+      "id": "kmp-20261105-1012",
+      "name": "Flaş Fırsat Saati",
+      "start": "2026-11-05T10:12:43.045948+00:00",
+      "end": "2026-11-05T10:27:43.045948+00:00",
+      "expected_traffic_multiplier": 5,
+      "expected_conversion": 0.05
+    },
+    {
+      "id": "kmp-20261105-1043",
+      "name": "Flaş Fırsat Saati",
+      "start": "2026-11-05T10:43:05.285811+00:00",
+      "end": "2026-11-05T10:58:05.285811+00:00",
+      "expected_traffic_multiplier": 5,
+      "expected_conversion": 0.05
     }
   ]
 }
