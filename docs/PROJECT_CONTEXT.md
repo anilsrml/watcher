@@ -241,7 +241,7 @@ Dosyalar:
 - Olay başına maliyet
 - Nöbetçi mühendis için kullanılabilirlik
 
-Baseline'lar: rules-only, single-shot LLM, full agent. Her senaryo 3 kez çalışır. Holdout ayrılır.
+Baseline'lar: rules-only, single-shot LLM, full agent. Her senaryo 3 kez çalışır. Holdout ayrılır. Kullanıcı kararı (2026-11-05): önce single-shot LLM yapıldı, rules-only ertelendi.
 
 ### Güvenlik
 
@@ -268,7 +268,7 @@ Baseline'lar: rules-only, single-shot LLM, full agent. Her senaryo 3 kez çalı�
 
 | Soru | Durum / varsayılan |
 |---|---|
-| LLM modeli ne olacak? | LiteLLM ile API. Model maliyet testinden sonra seçilecek |
+| LLM modeli ne olacak? | LiteLLM ile API. 2026-11-05: kullanıcı OpenRouter üzerinden `deepseek/deepseek-v4.1-flash-1017` seçti (olay başına ~$0,003-0,006, ~27 sn). Başka modellerle kıyas açık |
 | Telegram bot bilgileri hazır mı? | Bot token ve chat ID kullanıcıdan alınacak |
 | Alarm nasıl tetiklenecek? | V1: CLI/curl. Alertmanager V1.1 |
 | Senaryo süreleri ne olacak? | 20-30 dakika, 3 tekrar |
@@ -285,7 +285,9 @@ Baseline'lar: rules-only, single-shot LLM, full agent. Her senaryo 3 kez çalı�
 5. **Senaryoları yaz.** k6 scriptleri ve 4 ground truth dosyası hazır olsun. Kod ✅ 2026-11-05: ground truth, `loadgen/shop.js`, `scenarios/runner.py`, checkout v1.1.0, 90 gün saklama, kalibrasyon (yukarıda "Koşu"). 12 koşu ✅ 2026-11-05: 3 seri, hiçbiri yarıda kalmadı; kayıtlar `scenarios/runs/`, 4'ü holdout.
    - Bitti sayılır: Her senaryo 3 kez çalışır ve aynı pencereyle tekrar oynatılır.
 
-LLM'li agent bu beş adımdan sonra gelir. Önce rules-only baseline çıkarılır.
+6. **Single-shot LLM agent.** ✅ 2026-11-05: `agent/` (kanıt toplama, SQLite evidence store, LiteLLM ile tek çağrı, atıf kontrolü, JSON + Markdown rapor, değerlendirme). Olay başına 13 kanıt, ~46 salt okunur sorgu; IP'ler LLM'e takma adla gider. Geliştirme seti (r1, r2): 8/8, macro-F1 1,000 (`agent/eval/dev.md`). Holdout (r3, bir kez): 3/4, macro-F1 0,778 (`agent/eval/holdout.md`); NAT kampanyası r3 `attack` sanıldı (iki baskın IP ve düşen dönüşüm; IP başına 245 oturum ve tam funnel'a rağmen). Aynı senaryonun r1 ve r2'si de yalnız orta güvenle doğruydu.
+
+Sıradaki: full agent ya da rules-only. NAT kampanyası en kırılgan senaryo; iyileştirme yalnız geliştirme koşularıyla ve yeni koşularla ölçülür, r3'e bakılarak ayarlanmaz.
 
 ### Agent çalışma kuralları
 
