@@ -1,0 +1,12 @@
+{
+  "scenario_id": "campaign-flash-sale-01",
+  "label": "legit_campaign",
+  "root_cause": "Takvimdeki flaş indirim kampanyası. Trafik yaklaşık 5 kat artar, çok sayıda farklı IP'den gelir ve tam funnel izler. Dönüşüm ve ödeme başarısı normal kalır.",
+  "expected_signals": [
+    "campaigns.json'da olay penceresiyle örtüşen kampanya",
+    "İstek hızı yaklaşık 5 kat, çok sayıda farklı istemci IP'si",
+    "Ürün, sepet ve checkout istekleri ana sayfayla orantılı artar",
+    "Dönüşüm ve ödeme başarısı baseline'a yakın",
+    "429 ve 5xx artışı yok"
+  ]
+}

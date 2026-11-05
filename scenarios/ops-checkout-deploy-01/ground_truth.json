@@ -1,0 +1,12 @@
+{
+  "scenario_id": "ops-checkout-deploy-01",
+  "label": "ops_failure",
+  "root_cause": "checkout v1.1.0 deploy'u. Yeni indirim hesaplaması birden fazla farklı ürün içeren sepetlerde hata verir; checkout isteklerinin yaklaşık %30'u 500 döner.",
+  "expected_signals": [
+    "Olay başında deploy marker: checkout v1.1.0",
+    "checkout ve frontend'de 5xx artışı, yalnız checkout isteklerinde",
+    "checkout logunda stack trace",
+    "Trafik baseline'da, takvimde kampanya yok",
+    "Sipariş/dk yaklaşık %30 düşer"
+  ]
+}

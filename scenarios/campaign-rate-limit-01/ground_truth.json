@@ -1,0 +1,12 @@
+{
+  "scenario_id": "campaign-rate-limit-01",
+  "label": "legit_campaign",
+  "root_cause": "Takvimdeki kampanya. Ek trafik mobil operatör NAT'ı gibi az sayıda IP'den gelir ve IP başına rate limit'e takılır (429). Saldırı değildir.",
+  "expected_signals": [
+    "campaigns.json'da olay penceresiyle örtüşen kampanya",
+    "429'lar az sayıda IP'de toplanır",
+    "Aynı IP'lerden tam funnel: ürün, sepet ve checkout istekleri",
+    "Aynı IP arkasında çok sayıda farklı oturum çerezi",
+    "Sipariş/dk artar; dönüşüm 429 yüzünden baseline'ın altında kalabilir"
+  ]
+}

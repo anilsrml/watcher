@@ -1,0 +1,12 @@
+{
+  "scenario_id": "attack-homepage-flood-01",
+  "label": "attack",
+  "root_cause": "Tek IP'den yalnız ana sayfaya L7 flood, baseline istek hızının yaklaşık 10 katı. DDoS değil. Takvimde kampanya yok.",
+  "expected_signals": [
+    "İsteklerin çoğu tek istemci IP'sinden",
+    "Artış yalnız / yolunda; ürün, sepet ve checkout artmaz (funnel kopuk)",
+    "429 artışı aynı IP'de toplanır",
+    "Saldırgan isteklerinde oturum çerezi yok",
+    "Sipariş/dk baseline'a yakın, takvimde kampanya yok"
+  ]
+}
