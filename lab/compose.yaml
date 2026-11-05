@@ -33,6 +33,9 @@ services:
       # Anonim erişim (agent, testler) yalnız okur; yazma (deploy marker) admin parolasıyla.
       GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?GRAFANA_ADMIN_PASSWORD gerekli}
+      # Koşu pencereleri 90 gün yeniden sorgulanabilsin. Loki'de retention kapalı: loglar silinmez.
+      PROMETHEUS_EXTRA_ARGS: --storage.tsdb.retention.time=90d
+      TEMPO_EXTRA_ARGS: -backend-scheduler.provider.work.compaction.block-retention=2160h -backend-worker.compaction.block-retention=2160h
     volumes:
       - lgtm-data:/data
     mem_limit: 3g
@@ -116,6 +119,7 @@ services:
       SERVICE: checkout
       OTEL_SERVICE_NAME: checkout
       OTEL_RESOURCE_ATTRIBUTES: service.version=${CHECKOUT_VERSION:-v1.0.0}
+      SERVICE_VERSION: ${CHECKOUT_VERSION:-v1.0.0}
     depends_on:
       postgres:
         condition: service_healthy

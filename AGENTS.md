@@ -29,7 +29,11 @@ uv run ruff format .   # format
 docker --context watcher-vds compose -f lab/compose.yaml --env-file .env up -d --build   # image'lar VPS'te derlenir
 uv run --env-file .env pytest tests/e2e   # lab'a yalnız Tailscale'den erişildiğini doğrular
 uv run --env-file .env python lab/deploy.py checkout v1.4.2   # servisi yeni sürümle başlatır, Grafana'ya deploy marker yazar
+uv run --env-file .env python scenarios/runner.py campaign-flash-sale-01   # 30 dk'lık koşu; sıradaki tekrarı koşar, kaydı scenarios/runs/'a yazar
+uv run --env-file .env python scenarios/runner.py campaign-flash-sale-01 --trial   # 5 dk'lık deneme, tekrar sayılmaz
 ```
+
+Koşu sırasında dizüstü açık ve uyanık kalmalı. Kill switch: Ctrl+C ya da `docker --context default stop watcher-k6`. k6 dizüstünde Docker'da (`grafana/k6:2.3.0`) çalışır; kurulum gerekmez.
 
 Uygulama kodu `lab/app/shop/` altındadır; 5 servis aynı koddan çıkar, rol `SERVICE` ile seçilir. Docker context uzakta çalıştığı için lab'da bind mount kullanılmaz; ayar dosyaları image'a gömülür.
 

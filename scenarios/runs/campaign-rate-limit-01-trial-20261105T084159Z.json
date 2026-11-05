@@ -1,0 +1,32 @@
+{
+  "run_id": "campaign-rate-limit-01-trial-20261105T084159Z",
+  "incident_id": "inc-e20be75f",
+  "scenario_id": "campaign-rate-limit-01",
+  "repetition": null,
+  "trial": true,
+  "holdout": false,
+  "phases_s": [
+    60,
+    180,
+    60
+  ],
+  "started_at": "2026-11-05T08:41:59.816637+00:00",
+  "incident_start": "2026-11-05T08:42:59.816637+00:00",
+  "alarm_at": "2026-11-05T08:44:29.816637+00:00",
+  "incident_end": "2026-11-05T08:45:59.816637+00:00",
+  "planned_end": "2026-11-05T08:46:59.816637+00:00",
+  "window": {
+    "start": "2026-11-05T08:41:59.816637+00:00",
+    "end": "2026-11-05T08:44:29.816637+00:00"
+  },
+  "ground_truth_commit": "721186149ffc784c35cbe3c71086d188b9992ef4",
+  "host": {
+    "cpu_model": "Intel(R) Xeon(R) CPU E5-2699 v4 @ 2.20GHz",
+    "noise_job_s": 1.496
+  },
+  "aborted": false,
+  "campaign_id": "kmp-20261105-0842",
+  "nat_ips": "176.40.12.7,176.40.12.19",
+  "k6_exit": 0,
+  "ended_at": "2026-11-05T08:47:15.714585+00:00"
+}

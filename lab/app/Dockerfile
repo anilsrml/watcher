@@ -8,4 +8,5 @@ RUN uv sync --frozen --no-dev --no-install-project
 COPY lab/app/shop ./shop
 
 ENV PATH="/app/.venv/bin:$PATH"
-CMD ["opentelemetry-instrument", "uvicorn", "shop.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Keep-alive, httpx havuzunun 5 sn'sinden uzun: sunucu boştaki bağlantıyı istemciden önce kapatıp ReadError'a yol açmasın.
+CMD ["opentelemetry-instrument", "uvicorn", "shop.main:app", "--host", "0.0.0.0", "--port", "8000", "--timeout-keep-alive", "30"]

@@ -80,6 +80,40 @@ async def test_checkout_charges_cart_total_and_empties_cart(shop):
     assert (await shop.get(f"{CART}/carts/{session}")).json() == {"items": {}}
 
 
+@pytest.fixture
+def checkout_v1_1_0(monkeypatch):
+    """shop fixture'ından önce istenmeli: sürüm servis oluşturulurken okunur."""
+    monkeypatch.setenv("SERVICE_VERSION", "v1.1.0")
+
+
+@pytest.mark.anyio
+async def test_checkout_v1_1_0_still_sells_single_product_carts(checkout_v1_1_0, shop):
+    session = uuid4().hex
+    await shop.post(
+        f"{CART}/carts/{session}/items", json={"product_id": 1, "quantity": 2}
+    )
+
+    order = await shop.post(f"{CHECKOUT}/checkout", json={"session_id": session})
+
+    assert order.json()["total_kurus"] == 2 * 89900
+
+
+@pytest.mark.anyio
+async def test_checkout_v1_1_0_fails_multi_product_carts_with_logged_trace(
+    checkout_v1_1_0, shop, caplog
+):
+    session = uuid4().hex
+    await shop.post(f"{CART}/carts/{session}/items", json={"product_id": 1})
+    await shop.post(f"{CART}/carts/{session}/items", json={"product_id": 3})
+
+    # ASGITransport uygulama hatasını 500 yanıtı yerine istemciye yükseltir.
+    with pytest.raises(KeyError):
+        await shop.post(f"{CHECKOUT}/checkout", json={"session_id": session})
+
+    errors = [r for r in caplog.records if r.name == "shop" and r.exc_info]
+    assert errors and "/checkout" in errors[0].getMessage()
+
+
 @pytest.mark.anyio
 async def test_checkout_rejects_empty_cart(shop):
     response = await shop.post(f"{CHECKOUT}/checkout", json={"session_id": uuid4().hex})

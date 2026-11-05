@@ -10,7 +10,7 @@ import asyncpg
 import httpx
 import redis.asyncio as redis
 from fastapi import FastAPI, Form, HTTPException, Request
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, PlainTextResponse, RedirectResponse
 from opentelemetry import metrics
 from pydantic import BaseModel, Field
 
@@ -217,8 +217,18 @@ class CheckoutRequest(BaseModel):
     session_id: str
 
 
+def _bundle_discount(items: dict[str, int], prices: dict[str, int]) -> int:
+    """Birden fazla farklı ürünlü sepette en ucuz üründen %10 indirim."""
+    if len(items) < 2:
+        return 0
+    cheapest = min(items, key=prices.get)
+    return prices[int(cheapest)] // 10
+
+
 def _checkout(app: FastAPI) -> None:
     app.state.schema = _checkout_schema
+    # shortcut: tek image olduğu için v1.1.0'ın kodu sürüm değişkeniyle açılır; ops-checkout-deploy-01 bu sürümün hatasına dayanır.
+    bundle_discount = os.environ.get("SERVICE_VERSION", "v1.0.0") == "v1.1.0"
 
     @app.post("/checkout")
     async def checkout(request: CheckoutRequest) -> dict:
@@ -232,6 +242,8 @@ def _checkout(app: FastAPI) -> None:
         )
         prices = {str(p["id"]): p["price_kurus"] for p in products}
         total = sum(prices[pid] * qty for pid, qty in items.items())
+        if bundle_discount:
+            total -= _bundle_discount(items, prices)
         payment = {"amount_kurus": total}
         (await http.post(f"{url('payment')}/payments", json=payment)).raise_for_status()
         order_id = await app.state.db.fetchval(
@@ -282,6 +294,14 @@ def create_app(service: str) -> FastAPI:
     app.state.schema = None
     app.state.uses_redis = False
     SERVICES[service](app)
+
+    @app.exception_handler(Exception)
+    async def log_unhandled(request: Request, exc: Exception) -> PlainTextResponse:
+        # Yakalanmamış hata, stack trace'iyle uygulama logundan Loki'ye gitsin.
+        logger.error(
+            "unhandled error on %s %s", request.method, request.url.path, exc_info=exc
+        )
+        return PlainTextResponse("Internal Server Error", status_code=500)
 
     @app.get("/healthz")
     def healthz() -> dict:

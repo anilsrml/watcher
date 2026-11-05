@@ -1,3 +1,52 @@
 {
-  "campaigns": []
+  "campaigns": [
+    {
+      "id": "kmp-20261105-0823",
+      "name": "Kasım Fırsatları",
+      "start": "2026-11-05T08:23:40.496658+00:00",
+      "end": "2026-11-05T08:26:40.496658+00:00",
+      "expected_traffic_multiplier": 5,
+      "expected_conversion": 0.05
+    },
+    {
+      "id": "kmp-20261105-0829",
+      "name": "Kasım Fırsatları",
+      "start": "2026-11-05T08:29:11.191362+00:00",
+      "end": "2026-11-05T08:32:11.191362+00:00",
+      "expected_traffic_multiplier": 5,
+      "expected_conversion": 0.05
+    },
+    {
+      "id": "kmp-20261105-0842",
+      "name": "Gece Yarısı Fırsatı",
+      "start": "2026-11-05T08:42:59.816637+00:00",
+      "end": "2026-11-05T08:45:59.816637+00:00",
+      "expected_traffic_multiplier": 5,
+      "expected_conversion": 0.05
+    },
+    {
+      "id": "kmp-20261105-0848",
+      "name": "Kasım Fırsatları",
+      "start": "2026-11-05T08:48:23.780664+00:00",
+      "end": "2026-11-05T08:51:23.780664+00:00",
+      "expected_traffic_multiplier": 5,
+      "expected_conversion": 0.05
+    },
+    {
+      "id": "kmp-20261105-0855",
+      "name": "Sepette Ekstra İndirim",
+      "start": "2026-11-05T08:55:42.489141+00:00",
+      "end": "2026-11-05T08:58:42.489141+00:00",
+      "expected_traffic_multiplier": 5,
+      "expected_conversion": 0.05
+    },
+    {
+      "id": "kmp-20261105-0901",
+      "name": "Teknoloji Günleri",
+      "start": "2026-11-05T09:01:03.553636+00:00",
+      "end": "2026-11-05T09:04:03.553636+00:00",
+      "expected_traffic_multiplier": 5,
+      "expected_conversion": 0.05
+    }
+  ]
 }

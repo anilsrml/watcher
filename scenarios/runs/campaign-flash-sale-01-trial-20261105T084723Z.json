@@ -1,0 +1,31 @@
+{
+  "run_id": "campaign-flash-sale-01-trial-20261105T084723Z",
+  "incident_id": "inc-cc258035",
+  "scenario_id": "campaign-flash-sale-01",
+  "repetition": null,
+  "trial": true,
+  "holdout": false,
+  "phases_s": [
+    60,
+    180,
+    60
+  ],
+  "started_at": "2026-11-05T08:47:23.780664+00:00",
+  "incident_start": "2026-11-05T08:48:23.780664+00:00",
+  "alarm_at": "2026-11-05T08:49:53.780664+00:00",
+  "incident_end": "2026-11-05T08:51:23.780664+00:00",
+  "planned_end": "2026-11-05T08:52:23.780664+00:00",
+  "window": {
+    "start": "2026-11-05T08:47:23.780664+00:00",
+    "end": "2026-11-05T08:49:53.780664+00:00"
+  },
+  "ground_truth_commit": "721186149ffc784c35cbe3c71086d188b9992ef4",
+  "host": {
+    "cpu_model": "Intel(R) Xeon(R) CPU E5-2699 v4 @ 2.20GHz",
+    "noise_job_s": 1.252
+  },
+  "aborted": false,
+  "campaign_id": "kmp-20261105-0848",
+  "k6_exit": 0,
+  "ended_at": "2026-11-05T08:52:38.939915+00:00"
+}

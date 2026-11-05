@@ -165,6 +165,48 @@ Her senaryodan önce 10 dakikalık normal trafik baseline alınır.
 - Tek IP'den gelen yük **L7 flood**'dur, DDoS değildir.
 - Raporda bu sınır açıkça yazılır.
 
+### Koşu
+
+`scenarios/runner.py` bir koşuyu baştan sona yürütür. k6 dizüstünde Docker'da çalışır (`grafana/k6:2.3.0`, `loadgen/shop.js`).
+
+| Dakika | Ne olur |
+|---|---|
+| Başlamadan | Ground truth commit'li ve değişmemiş mi, saatler senkron mu (VPS saati Nginx `Date` başlığından, en çok 2 sn fark), 5 servis v1.0.0'da mı. Sonra CPU modeli ve gürültü işi ölçülür |
+| 0-10 | Normal trafik: saniyede 1,5 yeni alışverişçi (~5-6 istek/sn), dönüşüm ~%5. Alışverişçilerin %80'i 2-4 ürüne bakar, bakanların %30'u sepete ekler (%30'u iki farklı ürün), ekleyenlerin %21'i öder. Her oturum rastgele bir IP ve gerçek tarayıcı User-Agent'ı kullanır |
+| 10-25 | Olay. Kampanyalarda koşucu `campaigns.json`'a kampanya yazar (pazarlama adı, 5x, %5) |
+| 12 | Alarm. Agent'a yalnız `incident_id` ve pencere (koşu başı → alarm) verilir |
+| 25-30 | Toparlanma: kampanya ve saldırı biter, checkout v1.0.0'a döner |
+
+| Senaryo | Olay |
+|---|---|
+| `campaign-flash-sale-01` | Kampanya; ek 6 alışverişçi/sn, normal IP havuzundan |
+| `attack-homepage-flood-01` | Tek IP'den yalnız `/`, 55 istek/sn (~10x). Bot çerez tutmaz; User-Agent gerçek tarayıcılardan |
+| `campaign-rate-limit-01` | Kampanya; ek 6 alışverişçi/sn, 2 IP'nin arkasından (mobil operatör NAT'ı gibi), IP başına ~11 istek/sn |
+| `ops-checkout-deploy-01` | checkout v1.1.0: yeni indirim hesaplaması birden fazla farklı ürünlü sepette hata verir. Stack trace checkout logunda |
+
+Dosyalar:
+
+- `scenarios/<id>/ground_truth.json`: etiket, beklenen kök neden, beklenen sinyaller. Koşudan önce commit'lenir; kayıtta commit'i durur.
+- `scenarios/runs/<run_id>.json`: koşu saatleri, `incident_id`, pencere, kampanya ve deploy bilgisi, host ölçümü. Koşucu yazar.
+- Her senaryonun 3. tekrarı holdout'tur (12 koşudan 4'ü, %33). Deneme koşuları (`--trial`) tekrar sayılmaz. Yarıda kalan koşu da sayılmaz; kaydı `-aborted-` ekiyle durur.
+- Agent ground truth ve koşu kayıtlarını okumaz. `incident_id` senaryo adını taşımaz. Kampanya takvimini okur.
+- Telemetri en az 90 gün saklanır: Prometheus ve Tempo 90 gün, Loki logları silmez. 12 koşu için tahmini disk 2-3 GB (denemelerde ~50 bin istek: Tempo +96 MB, Prometheus +7 MB, Nginx logu 14 MB).
+
+### Kalibrasyon (2026-11-05, deneme koşuları: 60 sn normal, 180 sn olay, 60 sn toparlanma)
+
+| Deneme | Olay sırasında | 429 | Uygulama hatası | p95 (429 hariç) | Dönüşüm |
+|---|---|---|---|---|---|
+| Normal trafik | ~5-6 istek/sn | 0 | 0 | ~70 ms | ~%4-5 |
+| Flaş indirim | 29 istek/sn | 0 | 0 | 0,5 sn | %4,9 |
+| NAT kampanyası (2 IP) | 25 istek/sn, NAT IP'si başına ~9 | NAT isteklerinin ~%15'i, normal IP'lerde 0 | 0 | 148 ms | %2,0 |
+| Flood (eski ayar: 80 istek/sn, limit 10 r/s) | Saldırgan 80 istek/sn | Saldırgan isteklerinin %87'si, normal IP'lerde 0 | 0 | 67 → 127 ms | — |
+| checkout v1.1.0 | ~8,6 istek/sn (eski ayar: 2 alışverişçi/sn) | 0 | checkout'ların 10/25'i 500 (9 `KeyError`, 1 deploy anındaki bağlantı hatası) | 75 ms | %4,0 |
+
+- Kapasite sınırı frontend: istek başına ~23 ms CPU, tek süreç. 5x kampanyada ~0,85 çekirdek. 2 alışverişçi/sn ile kampanya 36 istek/sn'de p95 3,9 sn oldu; bu yüzden normal trafik 1,5 alışverişçi/sn'ye, flood 55 istek/sn'ye, rate limit 8 istek/sn'ye indi.
+- uvicorn keep-alive 30 sn: 5 sn'de httpx havuzuyla yarışıp yük altında `ReadError` (500) üretiyordu.
+- k6'nın gönderdiği istek sayısı Nginx loguyla birebir tuttu: sağlayıcının DDoS koruması araya girmiyor.
+- Flood yeni ayarla (55 istek/sn, limit 8) denenmedi; beklenen 429 oranı ~%85.
+
 ### Agent akışı
 
 | Adım | Ne yapar | Tamamlanma ölçütü |
@@ -238,9 +280,9 @@ Baseline'lar: rules-only, single-shot LLM, full agent. Her senaryo 3 kez çalı�
    - Bitti sayılır: Grafana ve uygulama Tailscale üzerinden açılır, internetten açılmaz.
 3. **Uygulamayı enstrümante et.** ✅ 2026-11-05: ödeme isteği tek trace'te 5 servisi, Postgres ve Redis çağrılarını gösterir (`tests/e2e/test_shop_flow.py`). Normal kullanıcı yolculuğu metrik, log ve trace olarak görünsün.
    - Bitti sayılır: Ana sayfa → ürün → sepet → checkout → payment akışı Grafana'da izlenir.
-4. **Edge ve iş verisini ekle.** Edge kısmı ✅ 2026-11-05: `otel-collector` (servis OTLP'si, Nginx JSON logu, host ve container metrikleri), Nginx'te istemci IP'si (`X-Forwarded-For` yalnız Tailscale'den) ve IP başına rate limit (10 istek/sn, 20 burst; 5. adımda kalibre edilecek). İş verisi ✅ 2026-11-05: iş sayaçları, kampanya takvimi (`scenarios/campaigns.json`), deploy marker (`lab/deploy.py`).
+4. **Edge ve iş verisini ekle.** Edge kısmı ✅ 2026-11-05: `otel-collector` (servis OTLP'si, Nginx JSON logu, host ve container metrikleri), Nginx'te istemci IP'si (`X-Forwarded-For` yalnız Tailscale'den) ve IP başına rate limit (8 istek/sn, 20 burst; 5. adımda kalibre edildi). İş verisi ✅ 2026-11-05: iş sayaçları, kampanya takvimi (`scenarios/campaigns.json`), deploy marker (`lab/deploy.py`).
    - Bitti sayılır: Saldırı ve kampanya kanıtı sorgulanabilir.
-5. **Senaryoları yaz.** k6 scriptleri ve 4 ground truth dosyası hazır olsun.
+5. **Senaryoları yaz.** k6 scriptleri ve 4 ground truth dosyası hazır olsun. Kod ✅ 2026-11-05: ground truth, `loadgen/shop.js`, `scenarios/runner.py`, checkout v1.1.0, 90 gün saklama, kalibrasyon (yukarıda "Koşu"). 12 koşu bekliyor.
    - Bitti sayılır: Her senaryo 3 kez çalışır ve aynı pencereyle tekrar oynatılır.
 
 LLM'li agent bu beş adımdan sonra gelir. Önce rules-only baseline çıkarılır.

@@ -25,7 +25,7 @@ dev = [
 ]
 
 [tool.pytest.ini_options]
-pythonpath = ["lab/app"]
+pythonpath = ["lab/app", "scenarios"]
 
 [tool.ruff]
-src = [".", "lab/app"]
+src = [".", "lab/app", "scenarios"]
