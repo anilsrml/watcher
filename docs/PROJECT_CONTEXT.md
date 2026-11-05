@@ -282,7 +282,7 @@ Baseline'lar: rules-only, single-shot LLM, full agent. Her senaryo 3 kez çalı�
    - Bitti sayılır: Ana sayfa → ürün → sepet → checkout → payment akışı Grafana'da izlenir.
 4. **Edge ve iş verisini ekle.** Edge kısmı ✅ 2026-11-05: `otel-collector` (servis OTLP'si, Nginx JSON logu, host ve container metrikleri), Nginx'te istemci IP'si (`X-Forwarded-For` yalnız Tailscale'den) ve IP başına rate limit (8 istek/sn, 20 burst; 5. adımda kalibre edildi). İş verisi ✅ 2026-11-05: iş sayaçları, kampanya takvimi (`scenarios/campaigns.json`), deploy marker (`lab/deploy.py`).
    - Bitti sayılır: Saldırı ve kampanya kanıtı sorgulanabilir.
-5. **Senaryoları yaz.** k6 scriptleri ve 4 ground truth dosyası hazır olsun. Kod ✅ 2026-11-05: ground truth, `loadgen/shop.js`, `scenarios/runner.py`, checkout v1.1.0, 90 gün saklama, kalibrasyon (yukarıda "Koşu"). 12 koşu bekliyor.
+5. **Senaryoları yaz.** k6 scriptleri ve 4 ground truth dosyası hazır olsun. Kod ✅ 2026-11-05: ground truth, `loadgen/shop.js`, `scenarios/runner.py`, checkout v1.1.0, 90 gün saklama, kalibrasyon (yukarıda "Koşu"). 12 koşu ✅ 2026-11-05: 3 seri, hiçbiri yarıda kalmadı; kayıtlar `scenarios/runs/`, 4'ü holdout.
    - Bitti sayılır: Her senaryo 3 kez çalışır ve aynı pencereyle tekrar oynatılır.
 
 LLM'li agent bu beş adımdan sonra gelir. Önce rules-only baseline çıkarılır.

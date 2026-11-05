@@ -79,6 +79,22 @@
       "end": "2026-11-05T14:02:45.842845+00:00",
       "expected_traffic_multiplier": 5,
       "expected_conversion": 0.05
+    },
+    {
+      "id": "kmp-20261105-1534",
+      "name": "Sepette Ekstra İndirim",
+      "start": "2026-11-05T15:34:55.964603+00:00",
+      "end": "2026-11-05T15:49:55.964603+00:00",
+      "expected_traffic_multiplier": 5,
+      "expected_conversion": 0.05
+    },
+    {
+      "id": "kmp-20261105-1605",
+      "name": "Hafta Sonu İndirimi",
+      "start": "2026-11-05T16:05:18.948073+00:00",
+      "end": "2026-11-05T16:20:18.948073+00:00",
+      "expected_traffic_multiplier": 5,
+      "expected_conversion": 0.05
     }
   ]
 }
